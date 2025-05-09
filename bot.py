@@ -177,5 +177,22 @@ if __name__ == "__main__":
         fallbacks=[CommandHandler('cancel', cancel)]
     )
     application.add_handler(add_operator_conv)
+from telegram import ReplyKeyboardMarkup
 
+async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        ["Yangi leadlar", "Qabul qilinganlar"],
+        ["Atkaz qilinganlar", "Yetkazilmoqda"],
+        ["Yetkazildi", "Qaytib keldi"]
+    ]
+    markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text("Operator paneli", reply_markup=markup)
+
+async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        ["Leadlarim", "Statistika"],
+        ["Pul yechish", "Ortga"]
+    ]
+    markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text("Targetolog paneli", reply_markup=markup)
     application.run_polling()
