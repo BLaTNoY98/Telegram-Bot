@@ -8,6 +8,8 @@ from telegram import Update
 from telegram.ext import CallbackQueryHandler
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from telegram.ext import MessageHandler, ConversationHandler, filters
+logging.basicConfig(level=logging.INFO)
+application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 import config
 import db  # db.py faylini import qilamiz
 ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
