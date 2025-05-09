@@ -29,12 +29,18 @@ ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
 
 # Panel funksiyasi
 
-async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE): keyboard = [ [InlineKeyboardButton("Leadlarim", callback_data="my_leads")], [InlineKeyboardButton("Balansim", callback_data="my_balance")], [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")], ] reply_markup = InlineKeyboardMarkup(keyboard)
+async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("Leadlarim", callback_data="my_leads")],
+        [InlineKeyboardButton("Balansim", callback_data="my_balance")],
+        [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-if update.message:
-    await update.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
-elif update.callback_query:
-    await update.callback_query.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
+    if update.message:
+        await update.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
+    elif update.callback_query:
+        await update.callback_query.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
 
 # Start komandasi
 
