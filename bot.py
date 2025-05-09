@@ -23,11 +23,11 @@ logging.basicConfig(level=logging.INFO)
 
 db.init_db()
 
-Bosqichlar
+# Bosqichlar
 
 ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
 
-Panel funksiyasi
+# Panel funksiyasi
 
 async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE): keyboard = [ [InlineKeyboardButton("Leadlarim", callback_data="my_leads")], [InlineKeyboardButton("Balansim", callback_data="my_balance")], [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")], ] reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -36,7 +36,7 @@ if update.message:
 elif update.callback_query:
     await update.callback_query.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
 
-Start komandasi
+# Start komandasi
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE): user = update.effective_user
 
@@ -48,7 +48,7 @@ await update.message.reply_text(
     reply_markup=keyboard
 )
 
-Kontaktni qabul qilish
+# Kontaktni qabul qilish
 
 async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE): contact = update.message.contact user = update.effective_user
 
@@ -69,7 +69,7 @@ else:
 
 return ConversationHandler.END
 
-Callback tugmalar
+# Callback tugmalar
 
 async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE): query = update.callback_query data = query.data await query.answer()
 
@@ -82,7 +82,7 @@ elif data == "add_sale":
 else:
     await query.edit_message_text("Noma’lum tugma.")
 
-Admin panel
+# Admin panel
 
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE): if update.effective_user.id != config.ADMIN_ID: await update.message.reply_text("Siz admin emassiz.") return
 
@@ -95,7 +95,7 @@ keyboard = [
 reply_markup = InlineKeyboardMarkup(keyboard)
 await update.message.reply_text("Admin Panel:", reply_markup=reply_markup)
 
-Top5 komandasi
+# Top5 komandasi
 
 async def top5(update: Update, context: ContextTypes.DEFAULT_TYPE): conn = db.connect() cursor = conn.cursor() cursor.execute(""" SELECT t.name, COUNT(s.id) as sales_count FROM sales s JOIN targetologlar t ON s.targetolog_id = t.id GROUP BY s.targetolog_id ORDER BY sales_count DESC LIMIT 5 """) rows = cursor.fetchall() conn.close()
 
@@ -109,7 +109,7 @@ for i, (name, count) in enumerate(rows, 1):
 
 await update.message.reply_text(text, parse_mode="Markdown")
 
-'Operator qo‘shish'
+# Operator qo‘shish
 
 operator_temp_data = {}
 
@@ -132,7 +132,7 @@ return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE): await update.message.reply_text("Bekor qilindi.") return ConversationHandler.END
 
-Application sozlash
+# Application sozlash
 
 application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
@@ -140,7 +140,7 @@ application.add_handler(CommandHandler("start", start)) application.add_handler(
 
 add_operator_conv = ConversationHandler( entry_points=[CommandHandler('add_operator', add_operator_start)], states={ ADD_OPERATOR_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_name)], ADD_OPERATOR_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_id)], }, fallbacks=[CommandHandler('cancel', cancel)] ) application.add_handler(add_operator_conv)
 
-Botni ishga tushuramiz
+# Botni ishga tushuramiz
 
 if name == 'main': application.run_polling()
 
