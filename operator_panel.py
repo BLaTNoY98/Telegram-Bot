@@ -45,7 +45,7 @@ async def accept_lead(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Lead topilmadi.")
         return ConversationHandler.END
 
-    if not lead[3]:  # address yo‘q
+    if not lead[3]:  # manzil yo‘q
         pending_address[query.from_user.id] = lead_id
         await query.message.reply_text("Iltimos, mijoz manzilini yuboring:")
         return ASK_ADDRESS
@@ -98,7 +98,6 @@ async def view_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def get_operator_handlers():
     return [
         CallbackQueryHandler(view_new_leads, pattern="^view_new_leads$"),
-        CallbackQueryHandler(accept_lead, pattern="^accept_"),
         CallbackQueryHandler(callback_lead, pattern="^callback_"),
         CallbackQueryHandler(archive_lead, pattern="^archive_"),
         CallbackQueryHandler(view_balance, pattern="^view_balance$"),
@@ -109,4 +108,4 @@ def get_operator_handlers():
             },
             fallbacks=[],
         )
-  ]
+    ]
