@@ -63,7 +63,13 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Telefon raqam o‘zingizga tegishli bo‘lishi kerak.")
         return
 
-    await update.message.reply_text("Ro'yxatdan o'tdingiz. Panel yuklanmoqda...")
+    is_op = db.is_operator(update.effective_user.id)
+if is_op:
+    await update.message.reply_text("Operator sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
+    await show_operator_panel(update, context)
+else:
+    await update.message.reply_text("Targetolog sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
+    await show_targetolog_panel(update, context)
     await show_targetolog_panel(update, context)
 
 # Callback tugmalar
