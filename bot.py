@@ -1,43 +1,39 @@
-import os
 import logging
 from telegram import (
-    Update,
-    InlineKeyboardButton,
-    KeyboardButton,
-    InlineKeyboardMarkup,
-    ReplyKeyboardMarkup
+    Update, InlineKeyboardButton, InlineKeyboardMarkup,
+    KeyboardButton, ReplyKeyboardMarkup
 )
 from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    CallbackQueryHandler,
-    ContextTypes,
-    MessageHandler,
-    ConversationHandler,
-    filters
+    ApplicationBuilder, CommandHandler, CallbackQueryHandler,
+    MessageHandler, ContextTypes, ConversationHandler, filters
 )
 import config
 import db
 
+# Logging
 logging.basicConfig(level=logging.INFO)
 
+# Bosqichlar
+ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
+operator_temp_data = {}
+
+# DB
 db.init_db()
 
-ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
-
+# PANEL: Targetolog paneli
 async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("Leadlarim", callback_data="my_leads")],
         [InlineKeyboardButton("Balansim", callback_data="my_balance")],
         [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
+    markup = InlineKeyboardMarkup(keyboard)
     if update.message:
-        await update.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
+        await update.message.reply_text("Targetolog Paneli:", reply_markup=markup)
     elif update.callback_query:
-        await update.callback_query.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
+        await update.callback_query.message.reply_text("Targetolog Paneli:", reply_markup=markup)
 
+# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
@@ -48,23 +44,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=keyboard
     )
 
+# Kontaktni qabul qilish
 async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     contact = update.message.contact
 
-    if contact is None or contact.phone_number is None:
-        await update.message.reply_text("Iltimos, telefon raqamingizni yuboring.")
-        return ConversationHandler.END
-
-    if contact.user_id != user.id:
+    if contact is None or contact.phone_number is None or contact.user_id != user.id:
         await update.message.reply_text("❌ Telefon raqam o‘zingizga tegishli bo‘lishi kerak.")
         return ConversationHandler.END
 
     phone = contact.phone_number
-    await update.message.reply_text("Ro'yxatdan o'tdingiz. Panel yuklanmoqda...")
+
+    # Saqlash kerak bo‘lsa bu yerga qo‘shing
+    await update.message.reply_text("Ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
+
     await show_targetolog_panel(update, context)
     return ConversationHandler.END
 
+# Callbacklar
 async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
@@ -79,6 +76,7 @@ async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:
         await query.edit_message_text("Noma’lum tugma.")
 
+# Admin panel
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != config.ADMIN_ID:
         await update.message.reply_text("Siz admin emassiz.")
@@ -93,6 +91,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Admin Panel:", reply_markup=reply_markup)
 
+# Top 5
 async def top5(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn = db.connect()
     cursor = conn.cursor()
@@ -117,8 +116,7 @@ async def top5(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(text, parse_mode="Markdown")
 
-operator_temp_data = {}
-
+# Operator qo‘shish
 async def add_operator_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Operatorning ismini yuboring:")
     return ADD_OPERATOR_NAME
@@ -148,6 +146,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bekor qilindi.")
     return ConversationHandler.END
 
+# Application
 application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
 application.add_handler(CommandHandler("start", start))
@@ -166,6 +165,12 @@ add_operator_conv = ConversationHandler(
 )
 application.add_handler(add_operator_conv)
 
+# Polling bilan ishga tushirish
 if __name__ == "__main__":
-    await application.bot.delete_webhook(drop_pending_updates=True)
-    application.run_polling()
+    import asyncio
+
+    async def main():
+        await application.bot.delete_webhook(drop_pending_updates=True)
+        await application.run_polling()
+
+    asyncio.run(main())
