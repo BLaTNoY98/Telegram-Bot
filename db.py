@@ -7,7 +7,7 @@ def init_db():
     conn = connect()
     cursor = conn.cursor()
 
-    # Operatorlar jadvali
+    # Operators
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS operators (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,61 +19,19 @@ def init_db():
         );
     """)
 
-    # Targetologlar jadvali
+    # Targetologlar
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS targetologlar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
             telegram_id INTEGER UNIQUE,
+            name TEXT,
+            hold_balance REAL DEFAULT 0,
+            main_balance REAL DEFAULT 0,
             is_blocked INTEGER DEFAULT 0
         );
     """)
 
-    # Mahsulotlar (Offerlar) jadvali
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            video TEXT,
-            description TEXT,
-            operator_price REAL,
-            targetolog_price REAL,
-            is_active INTEGER DEFAULT 1
-        );
-    """)
-
-    # Leadlar jadvali
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS leads (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            lead_code TEXT UNIQUE,
-            name TEXT,
-            phone TEXT,
-            address TEXT,
-            status TEXT DEFAULT 'new',
-            product_id INTEGER,
-            operator_id INTEGER,
-            targetolog_id INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(operator_id) REFERENCES operators(id),
-            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id),
-            FOREIGN KEY(product_id) REFERENCES products(id)
-        );
-    """)
-
-    # Sotuvlar jadvali
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS sales (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            lead_code TEXT,
-            targetolog_id INTEGER,
-            amount REAL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id)
-        );
-    """)
-
-    # Foydalanuvchilar jadvali
+    # Users
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             telegram_id INTEGER PRIMARY KEY,
@@ -81,11 +39,66 @@ def init_db():
         );
     """)
 
+    # Products (Offers)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            description TEXT,
+            video TEXT,
+            price_targetolog REAL,
+            price_operator REAL,
+            is_active INTEGER DEFAULT 1
+        );
+    """)
+
+    # Leads
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS leads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lead_uid TEXT UNIQUE,
+            name TEXT,
+            phone TEXT,
+            address TEXT,
+            status TEXT DEFAULT 'new',
+            operator_id INTEGER,
+            targetolog_id INTEGER,
+            product_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(operator_id) REFERENCES operators(id),
+            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id),
+            FOREIGN KEY(product_id) REFERENCES products(id)
+        );
+    """)
+
+    # Sales (for targetolog statistics)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sales (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            targetolog_id INTEGER,
+            lead_id INTEGER,
+            amount REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id),
+            FOREIGN KEY(lead_id) REFERENCES leads(id)
+        );
+    """)
+
+    # Withdrawal Requests
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS withdrawals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            targetolog_id INTEGER,
+            amount REAL,
+            status TEXT DEFAULT 'pending',
+            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
     conn.commit()
     conn.close()
 
-
-# ------------------ Tekshiruv funksiyalar ------------------
+# === Basic Role Checks ===
 
 def is_operator(telegram_id: int) -> bool:
     conn = connect()
@@ -118,25 +131,7 @@ def register_user(telegram_id: int, phone_number: str):
     conn.commit()
     conn.close()
 
+# === Lead Unique ID Generator ===
 
-# ------------------ Lead qo‘shish funksiyasi ------------------
-
-def generate_lead_code():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM leads")
-    count = cursor.fetchone()[0]
-    conn.close()
-    return f"L{count + 1:05d}"
-
-def add_lead(name, phone, address, targetolog_id, product_id):
-    lead_code = generate_lead_code()
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO leads (lead_code, name, phone, address, targetolog_id, product_id)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (lead_code, name, phone, address, targetolog_id, product_id))
-    conn.commit()
-    conn.close()
-    return lead_code
+def generate_lead_uid(lead_id: int) -> str:
+    return f"L{str(lead_id).zfill(5)}"
