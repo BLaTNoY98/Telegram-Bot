@@ -167,4 +167,5 @@ add_operator_conv = ConversationHandler(
 application.add_handler(add_operator_conv)
 
 if __name__ == "__main__":
+    await application.bot.delete_webhook(drop_pending_updates=True)
     application.run_polling()
