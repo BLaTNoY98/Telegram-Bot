@@ -116,5 +116,5 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     application.add_handler(CallbackQueryHandler(targetolog_callback))
-
+    application.add_handlers(get_handlers())
     application.run_polling()
