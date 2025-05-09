@@ -99,7 +99,7 @@ add_operator_conv = ConversationHandler(
     fallbacks=[CommandHandler('cancel', cancel)]
 )
 application.add_handler(add_operator_conv)
-application.add_handler(CallbackQueryHandler(admin_callback))
+
 from telegram.ext import CallbackQueryHandler
 
 # Tugma bosilganda ishlovchi funksiya
@@ -121,6 +121,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Lead monitoring funksiyasi hali qo‘shilmagan.")
     else:
         await query.edit_message_text("Noma’lum amal.")
+        application.add_handler(CallbackQueryHandler(admin_callback))
 # Botni ishga tushuramiz
 if __name__ == '__main__':
     application.run_polling()
