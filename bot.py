@@ -196,7 +196,15 @@ async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TY
     markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text("Targetolog paneli", reply_markup=markup)
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import ReplyKeyboardMarkup
 
+def get_operator_keyboard():
+    keyboard = [
+        ["🆕 Yangi leadlar", "✅ Qabul qilinganlar"],
+        ["📊 Statistika", "💵 Pul yechish"],
+        ["◀️ Ortga"]
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("Yangi Leadlar", callback_data="view_new_leads")],
