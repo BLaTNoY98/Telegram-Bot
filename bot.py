@@ -58,6 +58,36 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Admin Panel:", reply_markup=reply_markup)
 
 application.add_handler(CommandHandler("admin", admin_panel))
+operator_temp_data = {}
+
+async def add_operator_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Operatorning ismini yuboring:")
+    return ADD_OPERATOR_NAME
+
+async def add_operator_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    operator_temp_data['name'] = update.message.text
+    await update.message.reply_text("Endi operatorning Telegram ID raqamini yuboring:")
+    return ADD_OPERATOR_ID
+
+async def add_operator_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        telegram_id = int(update.message.text)
+        name = operator_temp_data['name']
+
+        conn = db.connect()
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR IGNORE INTO operators (telegram_id, name) VALUES (?, ?)", (telegram_id, name))
+        conn.commit()
+        conn.close()
+
+        await update.message.reply_text(f"✅ Operator '{name}' muvaffaqiyatli qo‘shildi!")
+    except ValueError:
+        await update.message.reply_text("❌ Noto‘g‘ri ID. Faqat raqam yuboring.")
+    return ConversationHandler.END
+
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Bekor qilindi.")
+    return ConversationHandler.END
 add_operator_conv = ConversationHandler(
     entry_points=[CommandHandler('add_operator', add_operator_start)],
     states={
