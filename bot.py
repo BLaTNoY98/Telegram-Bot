@@ -1,4 +1,9 @@
 import os
+import logging
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+import config
+import db  # Siz yozgan db.py
 from telegram import Update
 from telegram.ext import CallbackQueryHandler
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
