@@ -5,7 +5,7 @@ from flask import Flask
 import config
 
 # Flask app yaratish
-app = Flask(name)
+app = Flask(__name__)
 
 @app.route('/')
 def index():
