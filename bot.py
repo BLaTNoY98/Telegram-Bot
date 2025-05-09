@@ -108,7 +108,8 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     if data == 'top5':
-        await top5(update, context) elif data == 'add_operator':
+        await top5(update, context) 
+    elif data == 'add_operator':
     await query.edit_message_text("Operator qo‘shishni boshlaymiz. Iltimos, /add_operator buyrug‘ini yuboring.")
         
     
