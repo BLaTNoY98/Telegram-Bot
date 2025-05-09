@@ -204,6 +204,13 @@ def get_operator_keyboard():
         ["📊 Statistika", "💵 Pul yechish"],
         ["◀️ Ortga"]
     ]
+    def show_operator_panel(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+    if not is_operator(user_id):
+        update.message.reply_text("Siz operator emassiz.")
+        return
+
+    update.message.reply_text("Operator paneliga xush kelibsiz:", reply_markup=get_operator_keyboard())
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
