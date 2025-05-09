@@ -7,7 +7,7 @@ def init_db():
     conn = connect()
     cursor = conn.cursor()
 
-    # Operators
+    # Operatorlar jadvali
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS operators (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,7 +19,7 @@ def init_db():
         );
     """)
 
-    # Targetologlar
+    # Targetologlar jadvali
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS targetologlar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,26 +29,43 @@ def init_db():
         );
     """)
 
-    # Leadlar
+    # Mahsulotlar (Offerlar) jadvali
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            video TEXT,
+            description TEXT,
+            operator_price REAL,
+            targetolog_price REAL,
+            is_active INTEGER DEFAULT 1
+        );
+    """)
+
+    # Leadlar jadvali
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lead_code TEXT UNIQUE,
             name TEXT,
             phone TEXT,
             address TEXT,
             status TEXT DEFAULT 'new',
+            product_id INTEGER,
             operator_id INTEGER,
             targetolog_id INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(operator_id) REFERENCES operators(id),
-            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id)
+            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id),
+            FOREIGN KEY(product_id) REFERENCES products(id)
         );
     """)
 
-    # Savdolar (balansdan pul olish yoki tushgan pul)
+    # Sotuvlar jadvali
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sales (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lead_code TEXT,
             targetolog_id INTEGER,
             amount REAL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -56,7 +73,7 @@ def init_db():
         );
     """)
 
-    # Ro‘yxatdan o‘tgan foydalanuvchilar
+    # Foydalanuvchilar jadvali
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             telegram_id INTEGER PRIMARY KEY,
@@ -67,7 +84,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- RUXSAT FUNKSIYALARI ---
+
+# ------------------ Tekshiruv funksiyalar ------------------
 
 def is_operator(telegram_id: int) -> bool:
     conn = connect()
@@ -100,120 +118,25 @@ def register_user(telegram_id: int, phone_number: str):
     conn.commit()
     conn.close()
 
-# --- ADMIN PANEL UCHUN FUNKSIYALAR ---
 
-def add_operator(name: str, telegram_id: int):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR IGNORE INTO operators (name, telegram_id) VALUES (?, ?)", (name, telegram_id))
-    conn.commit()
-    conn.close()
+# ------------------ Lead qo‘shish funksiyasi ------------------
 
-def add_targetolog(name: str, telegram_id: int):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR IGNORE INTO targetologlar (name, telegram_id) VALUES (?, ?)", (name, telegram_id))
-    conn.commit()
-    conn.close()
-
-def get_all_operators():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, telegram_id FROM operators")
-    result = cursor.fetchall()
-    conn.close()
-    return result
-
-def get_all_targetologs():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, telegram_id FROM targetologlar")
-    result = cursor.fetchall()
-    conn.close()
-    return result
-
-def count_operators():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM operators")
-    result = cursor.fetchone()[0]
-    conn.close()
-    return result
-
-def count_targetologs():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM targetologlar")
-    result = cursor.fetchone()[0]
-    conn.close()
-    return result
-
-def count_leads():
+def generate_lead_code():
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM leads")
-    result = cursor.fetchone()[0]
+    count = cursor.fetchone()[0]
     conn.close()
-    return result
+    return f"L{count + 1:05d}"
 
-# --- TARGETOLOG PANEL UCHUN FUNKSIYALAR ---
-
-def get_targetolog_id(telegram_id: int):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM targetologlar WHERE telegram_id = ?", (telegram_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result else None
-
-def get_targetolog_leads_by_status(targetolog_id: int, status: str):
+def add_lead(name, phone, address, targetolog_id, product_id):
+    lead_code = generate_lead_code()
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT id, name, phone, address, status, created_at 
-        FROM leads 
-        WHERE targetolog_id = ? AND status = ?
-        ORDER BY created_at DESC
-    """, (targetolog_id, status))
-    leads = cursor.fetchall()
-    conn.close()
-    return leads
-
-def get_targetolog_balance(telegram_id: int):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT hold_balance, main_balance FROM operators WHERE telegram_id = ?", (telegram_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result if result else (0, 0)
-
-def request_withdrawal(targetolog_id: int, amount: float):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO sales (targetolog_id, amount) VALUES (?, ?)", (targetolog_id, -abs(amount)))
+        INSERT INTO leads (lead_code, name, phone, address, targetolog_id, product_id)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (lead_code, name, phone, address, targetolog_id, product_id))
     conn.commit()
     conn.close()
-
-def count_leads_by_period(targetolog_id: int, period: str):
-    conn = connect()
-    cursor = conn.cursor()
-
-    if period == "daily":
-        cursor.execute("""
-            SELECT COUNT(*) FROM leads 
-            WHERE targetolog_id = ? AND date(created_at) = date('now')
-        """, (targetolog_id,))
-    elif period == "weekly":
-        cursor.execute("""
-            SELECT COUNT(*) FROM leads 
-            WHERE targetolog_id = ? AND created_at >= date('now', '-7 days')
-        """, (targetolog_id,))
-    elif period == "monthly":
-        cursor.execute("""
-            SELECT COUNT(*) FROM leads 
-            WHERE targetolog_id = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
-        """, (targetolog_id,))
-
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result else 0
+    return lead_code
