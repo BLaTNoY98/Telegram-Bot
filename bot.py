@@ -113,7 +113,7 @@ async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 # Botni ishga tushirish
 if __name__ == "__main__":
     application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
-
+    application.add_handlers(get_operator_handlers())
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     application.add_handler(CallbackQueryHandler(targetolog_callback))
