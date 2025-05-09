@@ -1,5 +1,6 @@
 import os
 from telegram import Update
+from telegram.ext import MessageHandler, ConversationHandler, filters
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import config
 import db  # db.py faylini import qilamiz
