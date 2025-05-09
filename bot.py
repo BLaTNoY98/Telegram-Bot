@@ -58,6 +58,15 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Admin Panel:", reply_markup=reply_markup)
 
 application.add_handler(CommandHandler("admin", admin_panel))
+add_operator_conv = ConversationHandler(
+    entry_points=[CommandHandler('add_operator', add_operator_start)],
+    states={
+        ADD_OPERATOR_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_name)],
+        ADD_OPERATOR_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_id)],
+    },
+    fallbacks=[CommandHandler('cancel', cancel)]
+)
+application.add_handler(add_operator_conv)
 from telegram.ext import CallbackQueryHandler
 
 # Tugma bosilganda ishlovchi funksiya
