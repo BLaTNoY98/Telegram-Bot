@@ -195,4 +195,17 @@ async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TY
     ]
     markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text("Targetolog paneli", reply_markup=markup)
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("Yangi Leadlar", callback_data="view_new_leads")],
+        [InlineKeyboardButton("Qabul Qilingan", callback_data="view_accepted_leads")],
+        [InlineKeyboardButton("Yetkazilmoqda", callback_data="view_delivering_leads")],
+        [InlineKeyboardButton("Yetkazildi", callback_data="view_delivered_leads")],
+        [InlineKeyboardButton("Qaytib Keldi", callback_data="view_returned_leads")],
+        [InlineKeyboardButton("Balans", callback_data="view_balance")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Operator paneliga xush kelibsiz:", reply_markup=reply_markup)
     application.run_polling()
