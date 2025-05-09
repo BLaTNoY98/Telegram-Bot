@@ -79,7 +79,6 @@ if is_op:
 else:
     await update.message.reply_text("Targetolog sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
     await show_targetolog_panel(update, context)
-    await show_targetolog_panel(update, context)
 
 # Callback tugmalar
 async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
