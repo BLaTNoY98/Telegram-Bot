@@ -1,235 +1,107 @@
-import logging
-from telegram import (
+import logging 
+from telegram import ( 
     Update, 
     InlineKeyboardButton, 
     InlineKeyboardMarkup, 
     KeyboardButton, 
-    ReplyKeyboardMarkup
-)
-from telegram.ext import (
+    ReplyKeyboardMarkup 
+) 
+from telegram.ext import ( 
     ApplicationBuilder, 
     CommandHandler, 
     CallbackQueryHandler, 
     ContextTypes, 
     MessageHandler, 
     ConversationHandler, 
-    filters
-)
-import config
+    filters 
+) 
+import config 
 import db
 
-# Log sozlash
+Log sozlash
+
 logging.basicConfig(level=logging.INFO)
 
-# Bosqichlar
-ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
-operator_temp_data = {}
+Bosqichlar
 
-# DB ni ishga tushirish
+ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2) operator_temp_data = {}
+
+DB ni ishga tushirish
+
 db.init_db()
-# PANEL funksiyasi: operator yoki targetolog panelini ochish
-async def handle_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
 
+Telefon raqam so'ralgan foydalanuvchilarni saqlovchi to'plam
+
+registered_users = set()
+
+Start komandasi
+
+aSync def start(update: Update, context: ContextTypes.DEFAULT_TYPE): user_id = update.effective_user.id
+
+if user_id in registered_users or db.is_registered(user_id):
     if db.is_operator(user_id):
         await show_operator_panel(update, context)
     elif db.is_targetolog(user_id):
         await show_targetolog_panel(update, context)
     else:
-        await update.message.reply_text("Siz hali ro'yxatdan o'tmagansiz yoki tasdiqlanmagansiz.")
-# Panel funksiyasi
-async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("Leadlarim", callback_data="my_leads")],
-        [InlineKeyboardButton("Balansim", callback_data="my_balance")],
-        [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("Siz hali tasdiqlanmagansiz.")
+    return
 
-    if update.message:
-        await update.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
-    elif update.callback_query:
-        await update.callback_query.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
+contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
+keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
 
-# Start komandasi
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
-    keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
+await update.message.reply_text(
+    "Botdan foydalanish uchun iltimos, telefon raqamingizni yuboring:",
+    reply_markup=keyboard
+)
 
-    await update.message.reply_text(
-        "Botdan foydalanish uchun iltimos, telefon raqamingizni yuboring:",
-        reply_markup=keyboard
-    )
+Kontaktni qabul qilish
 
-# Kontaktni qabul qilish
-async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    contact = update.message.contact
-    if contact is None or contact.phone_number is None:
-        await update.message.reply_text("Iltimos, telefon raqamingizni yuboring.")
-        return
+aSync def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE): contact = update.message.contact if contact is None or contact.phone_number is None: await update.message.reply_text("Iltimos, telefon raqamingizni yuboring.") return
 
-    if contact.user_id != update.effective_user.id:
-        await update.message.reply_text("❌ Telefon raqam o‘zingizga tegishli bo‘lishi kerak.")
-        return
+if contact.user_id != update.effective_user.id:
+    await update.message.reply_text("❌ Telefon raqam o‘zingizga tegishli bo‘lishi kerak.")
+    return
 
-    is_op = db.is_operator(update.effective_user.id)
-if is_op:
+user_id = update.effective_user.id
+db.register_user(user_id, contact.phone_number)
+registered_users.add(user_id)
+
+if db.is_operator(user_id):
     await update.message.reply_text("Operator sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
     await show_operator_panel(update, context)
 else:
     await update.message.reply_text("Targetolog sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
     await show_targetolog_panel(update, context)
 
-# Callback tugmalar
-async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    data = query.data
-    await query.answer()
+Panel funksiyalari
 
-    if data == "my_leads":
-        await query.edit_message_text("Sizning leadlaringiz hali yo‘q.")
-    elif data == "my_balance":
-        await query.edit_message_text("Sizning balansingiz: 0 so‘m.")
-    elif data == "add_sale":
-        await query.edit_message_text("Sotuv qo‘shish funksiyasi hali mavjud emas.")
-    else:
-        await query.edit_message_text("Noma’lum tugma.")
+aSync def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE): keyboard = [ [InlineKeyboardButton("Yangi Leadlar", callback_data="view_new_leads")], [InlineKeyboardButton("Qabul Qilingan", callback_data="view_accepted_leads")], [InlineKeyboardButton("Yetkazilmoqda", callback_data="view_delivering_leads")], [InlineKeyboardButton("Yetkazildi", callback_data="view_delivered_leads")], [InlineKeyboardButton("Qaytib Keldi", callback_data="view_returned_leads")], [InlineKeyboardButton("Balans", callback_data="view_balance")], ] reply_markup = InlineKeyboardMarkup(keyboard) await update.message.reply_text("Operator paneliga xush kelibsiz:", reply_markup=reply_markup)
 
-# Admin panel
-async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != config.ADMIN_ID:
-        await update.message.reply_text("Siz admin emassiz.")
-        return
+aSync def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE): keyboard = [ [InlineKeyboardButton("Leadlarim", callback_data="my_leads")], [InlineKeyboardButton("Balansim", callback_data="my_balance")], [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")] ] reply_markup = InlineKeyboardMarkup(keyboard)
 
-    keyboard = [
-        [InlineKeyboardButton("Top 5 Targetologlar", callback_data='top5')],
-        [InlineKeyboardButton("Operator qo‘shish", callback_data='add_operator')],
-        [InlineKeyboardButton("Balanslarni ko‘rish", callback_data='view_balances')],
-        [InlineKeyboardButton("Leadlar holati", callback_data='check_leads')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Admin Panel:", reply_markup=reply_markup)
+await update.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
 
-# Top 5 funksiyasi
-async def top5(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    conn = db.connect()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT t.name, COUNT(s.id) as sales_count
-        FROM sales s
-        JOIN targetologlar t ON s.targetolog_id = t.id
-        GROUP BY s.targetolog_id
-        ORDER BY sales_count DESC
-        LIMIT 5
-    """)
-    rows = cursor.fetchall()
-    conn.close()
+Callback tugmalar
 
-    if not rows:
-        await update.message.reply_text("Hozircha hech qanday sotuvlar yo‘q.")
-        return
+aSync def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE): query = update.callback_query data = query.data await query.answer()
 
-    text = "**Top 5 Targetologlar (Sotuvlar bo‘yicha):**\n\n"
-    for i, (name, count) in enumerate(rows, 1):
-        text += f"{i}. {name} – {count} ta sotuv\n"
+if data == "my_leads":
+    await query.edit_message_text("Sizning leadlaringiz hali yo‘q.")
+elif data == "my_balance":
+    await query.edit_message_text("Sizning balansingiz: 0 so‘m.")
+elif data == "add_sale":
+    await query.edit_message_text("Sotuv qo‘shish funksiyasi hali mavjud emas.")
+else:
+    await query.edit_message_text("Noma’lum tugma.")
 
-    await update.message.reply_text(text, parse_mode="Markdown")
+Admin panel va boshqalar shu yerda davom ettiriladi...
 
-# Operator qo‘shish
-async def add_operator_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Operatorning ismini yuboring:")
-    return ADD_OPERATOR_NAME
+if name == "main": application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
-async def add_operator_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    operator_temp_data['name'] = update.message.text
-    await update.message.reply_text("Endi operatorning Telegram ID raqamini yuboring:")
-    return ADD_OPERATOR_ID
+application.add_handler(CommandHandler("start", start))
+application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
+application.add_handler(CallbackQueryHandler(targetolog_callback))
 
-async def add_operator_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        telegram_id = int(update.message.text)
-        name = operator_temp_data['name']
+application.run_polling()
 
-        conn = db.connect()
-        cursor = conn.cursor()
-        cursor.execute("INSERT OR IGNORE INTO operators (telegram_id, name) VALUES (?, ?)", (telegram_id, name))
-        conn.commit()
-        conn.close()
-
-        await update.message.reply_text(f"✅ Operator '{name}' muvaffaqiyatli qo‘shildi!")
-    except ValueError:
-        await update.message.reply_text("❌ Noto‘g‘ri ID. Faqat raqam yuboring.")
-    return ConversationHandler.END
-
-# Bekor qilish
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Bekor qilindi.")
-    return ConversationHandler.END
-
-# Application yaratish va ishga tushirish
-if __name__ == "__main__":
-    application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
-
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("admin", admin_panel))
-    application.add_handler(CommandHandler("top5", top5))
-    application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
-    application.add_handler(CallbackQueryHandler(targetolog_callback))
-
-    add_operator_conv = ConversationHandler(
-        entry_points=[CommandHandler('add_operator', add_operator_start)],
-        states={
-            ADD_OPERATOR_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_name)],
-            ADD_OPERATOR_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_id)],
-        },
-        fallbacks=[CommandHandler('cancel', cancel)]
-    )
-    application.add_handler(add_operator_conv)
-from telegram import ReplyKeyboardMarkup
-
-async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        ["Yangi leadlar", "Qabul qilinganlar"],
-        ["Atkaz qilinganlar", "Yetkazilmoqda"],
-        ["Yetkazildi", "Qaytib keldi"]
-    ]
-    markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text("Operator paneli", reply_markup=markup)
-
-async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        ["Leadlarim", "Statistika"],
-        ["Pul yechish", "Ortga"]
-    ]
-    markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text("Targetolog paneli", reply_markup=markup)
-    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram import ReplyKeyboardMarkup
-
-def get_operator_keyboard():
-    keyboard = [
-        ["🆕 Yangi leadlar", "✅ Qabul qilinganlar"],
-        ["📊 Statistika", "💵 Pul yechish"],
-        ["◀️ Ortga"]
-    ]
-    def show_operator_panel(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    if not is_operator(user_id):
-        update.message.reply_text("Siz operator emassiz.")
-        return
-
-    update.message.reply_text("Operator paneliga xush kelibsiz:", reply_markup=get_operator_keyboard())
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("Yangi Leadlar", callback_data="view_new_leads")],
-        [InlineKeyboardButton("Qabul Qilingan", callback_data="view_accepted_leads")],
-        [InlineKeyboardButton("Yetkazilmoqda", callback_data="view_delivering_leads")],
-        [InlineKeyboardButton("Yetkazildi", callback_data="view_delivered_leads")],
-        [InlineKeyboardButton("Qaytib Keldi", callback_data="view_returned_leads")],
-        [InlineKeyboardButton("Balans", callback_data="view_balance")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Operator paneliga xush kelibsiz:", reply_markup=reply_markup)
-    
-    application.run_polling()
