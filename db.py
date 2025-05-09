@@ -4,7 +4,11 @@ import sqlite3
 def connect():
     return sqlite3.connect("data.db")
 
-def init_db():
+def init_db():CREATE TABLE IF NOT EXISTS operators (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER UNIQUE,
+    name TEXT
+);
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("""
