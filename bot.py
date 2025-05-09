@@ -15,6 +15,7 @@ from telegram.ext import (
     filters
 )
 from admin import get_handlers
+from target import get_targetolog_handlers
 from operator import get_operator_handlers
 import config
 import db
@@ -112,6 +113,7 @@ async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 # Botni ishga tushirish
 if __name__ == "__main__":
+    application.add_handlers(get_targetolog_handlers())
     application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
     application.add_handlers(get_operator_handlers())
     application.add_handler(CommandHandler("start", start))
