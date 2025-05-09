@@ -16,7 +16,7 @@ from telegram.ext import (
 )
 from admin import get_handlers
 from target import get_targetolog_handlers
-from operator import get_operator_handlers
+from operator import get_operator_panel_handlers
 import config
 import db
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
     # Qo‘shimcha modullardan handlerlar
     application.add_handlers(get_targetolog_handlers())
-    application.add_handlers(get_operator_handlers())
+    application.add_handlers(get_operator_panel_handlers())
     application.add_handlers(get_handlers())  # admin handlerlar
 
     application.run_polling()
