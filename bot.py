@@ -4,30 +4,31 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     KeyboardButton,
-    ReplyKeyboardMarkup,
+    ReplyKeyboardMarkup
 )
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     CallbackQueryHandler,
-    MessageHandler,
     ContextTypes,
-    filters,
+    MessageHandler,
+    filters
 )
 import config
 import db
 
-# Log sozlash
 logging.basicConfig(level=logging.INFO)
 
-# Telefon raqami tekshirilgan foydalanuvchilar to‘plami (RAM uchun)
+# Faqat bir marta raqam so‘rash uchun
 registered_users = set()
 
-# START komandasi
+# DB ni ishga tushiramiz
+db.init_db()
+
+# /start komandasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
-    # Foydalanuvchi allaqachon ro‘yxatdan o‘tganmi?
     if user_id in registered_users or db.is_registered(user_id):
         if db.is_operator(user_id):
             await show_operator_panel(update, context)
@@ -37,7 +38,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Siz hali tasdiqlanmagansiz.")
         return
 
-    # Telefon raqamni so‘rash
     contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
     keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
 
@@ -49,7 +49,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Telefon raqamni qabul qilish
 async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     contact = update.message.contact
-
     if contact is None or contact.phone_number is None:
         await update.message.reply_text("Iltimos, telefon raqamingizni yuboring.")
         return
@@ -65,9 +64,11 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if db.is_operator(user_id):
         await update.message.reply_text("Operator sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
         await show_operator_panel(update, context)
-    else:
+    elif db.is_targetolog(user_id):
         await update.message.reply_text("Targetolog sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
         await show_targetolog_panel(update, context)
+    else:
+        await update.message.reply_text("Siz ro‘yxatdan o‘tdingiz, ammo hali tasdiqlanmagansiz.")
 
 # Operator paneli
 async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -77,7 +78,7 @@ async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE
         [InlineKeyboardButton("Yetkazilmoqda", callback_data="view_delivering_leads")],
         [InlineKeyboardButton("Yetkazildi", callback_data="view_delivered_leads")],
         [InlineKeyboardButton("Qaytib Keldi", callback_data="view_returned_leads")],
-        [InlineKeyboardButton("Balans", callback_data="view_balance")],
+        [InlineKeyboardButton("Balans", callback_data="view_balance")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Operator paneliga xush kelibsiz:", reply_markup=reply_markup)
@@ -87,12 +88,12 @@ async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TY
     keyboard = [
         [InlineKeyboardButton("Leadlarim", callback_data="my_leads")],
         [InlineKeyboardButton("Balansim", callback_data="my_balance")],
-        [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")],
+        [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Targetolog paneli:", reply_markup=reply_markup)
+    await update.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
 
-# Callback tugmalar
+# Callback tugmalari
 async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
@@ -107,9 +108,8 @@ async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:
         await query.edit_message_text("Noma’lum tugma.")
 
-# Botni ishga tushurish
+# Botni ishga tushirish
 if __name__ == "__main__":
-    db.init_db()
     application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
