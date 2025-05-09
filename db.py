@@ -7,64 +7,72 @@ def init_db():
     conn = connect()
     cursor = conn.cursor()
 
-    # operators jadvalini yaratish
+    # Operators (Alohida panelga kiradiganlar)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS operators (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             telegram_id INTEGER UNIQUE,
-            name TEXT
+            name TEXT,
+            hold_balance REAL DEFAULT 0,
+            main_balance REAL DEFAULT 0,
+            is_blocked INTEGER DEFAULT 0
         );
     """)
 
-    # targetologlar jadvali
+    # Targetologlar (Reklama orqali lead tashuvchilar)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS targetologlar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
-            telegram_id INTEGER UNIQUE
+            telegram_id INTEGER UNIQUE,
+            is_blocked INTEGER DEFAULT 0
         );
     """)
 
-    # sales jadvali
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS sales (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            targetolog_id INTEGER,
-            amount REAL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-
-    # leads jadvali
+    # Leadlar (Buyurtmalar)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
             phone TEXT,
             address TEXT,
-            status TEXT DEFAULT 'new',
+            status TEXT DEFAULT 'new',  -- new, accepted, rejected, delivering, delivered, returned
             operator_id INTEGER,
-            FOREIGN KEY(operator_id) REFERENCES operators(id)
+            targetolog_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(operator_id) REFERENCES operators(id),
+            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id)
         );
     """)
 
-    # Balans ustunlarini qo‘shishga urinish
-    try:
-        cursor.execute("ALTER TABLE operators ADD COLUMN hold_balance REAL DEFAULT 0")
-    except:
-        pass
-    try:
-        cursor.execute("ALTER TABLE operators ADD COLUMN main_balance REAL DEFAULT 0")
-    except:
-        pass
+    # Savdolar (targetologga tushganlar)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sales (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            targetolog_id INTEGER,
+            amount REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id)
+        );
+    """)
 
     conn.commit()
     conn.close()
 
+# Operator tekshirish
 def is_operator(telegram_id: int) -> bool:
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM operators WHERE telegram_id = ?", (telegram_id,))
+    cursor.execute("SELECT 1 FROM operators WHERE telegram_id = ? AND is_blocked = 0", (telegram_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
+
+# Targetolog tekshirish
+def is_targetolog(telegram_id: int) -> bool:
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM targetologlar WHERE telegram_id = ? AND is_blocked = 0", (telegram_id,))
     result = cursor.fetchone()
     conn.close()
     return result is not None
