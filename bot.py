@@ -56,19 +56,20 @@ await update.message.reply_text(
 
 # Kontaktni qabul qilish
 
-async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE): contact = update.message.contact user = update.effective_user
+async async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    contact = update.message.contact
 
-if contact and contact.user_id == user.id:
-    conn = db.connect()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT OR IGNORE INTO targetologlar (name, telegram_id) VALUES (?, ?)",
-        (user.full_name, user.id)
-    )
-    conn.commit()
-    conn.close()
+    if contact is None or contact.phone_number is None:
+        await update.message.reply_text("Iltimos, telefon raqamingizni yuboring.")
+        return
 
-    await update.message.reply_text("✅ Ro‘yxatdan o‘tdingiz.")
+    phone = contact.phone_number
+
+    # Telefon raqamini saqlash yoki tekshirish logikasi bu yerda bo'ladi
+    await update.message.reply_text("Ro'yxatdan o'tdingiz. Panel yuklanmoqda...")
+
+    # Panelni ko'rsatish
     await show_targetolog_panel(update, context)
 else:
     await update.message.reply_text("❌ Telefon raqam o‘zingizga tegishli bo‘lishi kerak.")
