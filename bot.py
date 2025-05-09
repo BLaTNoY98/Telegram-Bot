@@ -1,7 +1,7 @@
 import os
 from telegram import Update
-from telegram.ext import MessageHandler, ConversationHandler, filters
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import MessageHandler, ConversationHandler, filters
 import config
 import db  # db.py faylini import qilamiz
 ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
