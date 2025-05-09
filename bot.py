@@ -4,7 +4,7 @@ from telegram.ext import MessageHandler, ConversationHandler, filters
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import config
 import db  # db.py faylini import qilamiz
-ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2
+ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
 TOKEN = config.TELEGRAM_TOKEN
 application = ApplicationBuilder().token(TOKEN).build()
 
@@ -98,6 +98,7 @@ add_operator_conv = ConversationHandler(
     fallbacks=[CommandHandler('cancel', cancel)]
 )
 application.add_handler(add_operator_conv)
+application.add_handler(CallbackQueryHandler(admin_callback))
 from telegram.ext import CallbackQueryHandler
 
 # Tugma bosilganda ishlovchi funksiya
