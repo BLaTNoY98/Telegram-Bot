@@ -1,51 +1,49 @@
 import logging
-import logging
 from telegram import (
-    Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    KeyboardButton,
+    Update, 
+    InlineKeyboardButton, 
+    InlineKeyboardMarkup, 
+    KeyboardButton, 
     ReplyKeyboardMarkup
 )
 from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    CallbackQueryHandler,
-    ContextTypes,
-    MessageHandler,
-    ConversationHandler,
+    ApplicationBuilder, 
+    CommandHandler, 
+    CallbackQueryHandler, 
+    ContextTypes, 
+    MessageHandler, 
+    ConversationHandler, 
     filters
 )
-
 import config
 import db
 
-# Logging
+# Log sozlash
 logging.basicConfig(level=logging.INFO)
 
 # Bosqichlar
 ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
 operator_temp_data = {}
 
-# DB
+# DB ni ishga tushirish
 db.init_db()
 
-# PANEL: Targetolog paneli
+# Panel funksiyasi
 async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("Leadlarim", callback_data="my_leads")],
         [InlineKeyboardButton("Balansim", callback_data="my_balance")],
         [InlineKeyboardButton("Sotuv qo‘shish", callback_data="add_sale")]
     ]
-    markup = InlineKeyboardMarkup(keyboard)
-    if update.message:
-        await update.message.reply_text("Targetolog Paneli:", reply_markup=markup)
-    elif update.callback_query:
-        await update.callback_query.message.reply_text("Targetolog Paneli:", reply_markup=markup)
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-# /start
+    if update.message:
+        await update.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
+    elif update.callback_query:
+        await update.callback_query.message.reply_text("Targetolog Paneli:", reply_markup=reply_markup)
+
+# Start komandasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
     contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
     keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
 
@@ -56,22 +54,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Kontaktni qabul qilish
 async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
     contact = update.message.contact
+    if contact is None or contact.phone_number is None:
+        await update.message.reply_text("Iltimos, telefon raqamingizni yuboring.")
+        return
 
-    if contact is None or contact.phone_number is None or contact.user_id != user.id:
+    if contact.user_id != update.effective_user.id:
         await update.message.reply_text("❌ Telefon raqam o‘zingizga tegishli bo‘lishi kerak.")
-        return ConversationHandler.END
+        return
 
-    phone = contact.phone_number
-
-    # Saqlash kerak bo‘lsa bu yerga qo‘shing
-    await update.message.reply_text("Ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
-
+    await update.message.reply_text("Ro'yxatdan o'tdingiz. Panel yuklanmoqda...")
     await show_targetolog_panel(update, context)
-    return ConversationHandler.END
 
-# Callbacklar
+# Callback tugmalar
 async def targetolog_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
@@ -101,7 +96,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Admin Panel:", reply_markup=reply_markup)
 
-# Top 5
+# Top 5 funksiyasi
 async def top5(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn = db.connect()
     cursor = conn.cursor()
@@ -152,35 +147,29 @@ async def add_operator_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Noto‘g‘ri ID. Faqat raqam yuboring.")
     return ConversationHandler.END
 
+# Bekor qilish
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bekor qilindi.")
     return ConversationHandler.END
 
-# Application
-application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
-
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("admin", admin_panel))
-application.add_handler(CommandHandler("top5", top5))
-application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
-application.add_handler(CallbackQueryHandler(targetolog_callback))
-
-add_operator_conv = ConversationHandler(
-    entry_points=[CommandHandler('add_operator', add_operator_start)],
-    states={
-        ADD_OPERATOR_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_name)],
-        ADD_OPERATOR_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_id)],
-    },
-    fallbacks=[CommandHandler('cancel', cancel)]
-)
-application.add_handler(add_operator_conv)
-
-# Polling bilan ishga tushirish
+# Application yaratish va ishga tushirish
 if __name__ == "__main__":
-    import asyncio
+    application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
-    async def main():
-        await application.bot.delete_webhook(drop_pending_updates=True)
-        await application.run_polling()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("admin", admin_panel))
+    application.add_handler(CommandHandler("top5", top5))
+    application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
+    application.add_handler(CallbackQueryHandler(targetolog_callback))
 
-    asyncio.run(main())
+    add_operator_conv = ConversationHandler(
+        entry_points=[CommandHandler('add_operator', add_operator_start)],
+        states={
+            ADD_OPERATOR_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_name)],
+            ADD_OPERATOR_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_id)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+    application.add_handler(add_operator_conv)
+
+    application.run_polling()
