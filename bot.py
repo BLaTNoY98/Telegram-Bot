@@ -1,33 +1,31 @@
 import os
-import threading
-from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import config  # config.py faylingiz bo'lishi kerak
+from flask import Flask
+import config
 
-# Flask ilovasi
+# Flask app yaratish
 app = Flask(__name__)
 
 @app.route('/')
 def index():
     return "Bot is running!"
 
-# Telegram komandasi funksiyasi
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Telegram bot sozlash
+TOKEN = config.TELEGRAM_TOKEN
+
+# Telegram bot yaratish
+application = ApplicationBuilder().token(TOKEN).build()
+
+# /start komandasi
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Salom! Telegram botga xush kelibsiz.")
 
-# Telegram botni alohida funksiyada ishga tushuramiz
-def start_telegram_bot():
-    application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.run_polling()
+# Komanda qo‘shish
+application.add_handler(CommandHandler("start", start))
 
-# Flask va Telegram botni bir vaqtda ishga tushirish
-if __name__ == "__main__":
-    # Telegram botni alohida oqimda (thread) ishga tushirish
-    bot_thread = threading.Thread(target=start_telegram_bot)
-    bot_thread.start()
-
-    # Flask ilovasini ishga tushirish
+# Botni ishga tushirish
+if __name__ == '__main__':
+    application.run_polling()  # BU QATORNI FLASKDAN OLDIN ISHLATISH KERAK
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host='0.0.0.0', port=port)
