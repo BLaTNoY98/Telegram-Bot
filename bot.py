@@ -17,6 +17,33 @@ TOKEN = config.TELEGRAM_TOKEN
 application = ApplicationBuilder().token(TOKEN).build()
 
 # /start komandasi
+from telegram import KeyboardButton, ReplyKeyboardMarkup
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+
+    # Telefon raqam so‘rash
+    contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
+    keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
+
+    await update.message.reply_text(
+        "Botdan foydalanish uchun iltimos, telefon raqamingizni yuboring:",
+        reply_markup=keyboard
+    )
+from telegram import KeyboardButton, ReplyKeyboardMarkup
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+
+    # Telefon raqam so‘rash
+    contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
+    keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
+
+    await update.message.reply_text(
+        "Botdan foydalanish uchun iltimos, telefon raqamingizni yuboring:",
+        reply_markup=keyboard
+    )
+    
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db.init_db()
     await update.message.reply_text("Bot ishga tushdi!")
