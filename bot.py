@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import config
 import db  # db.py faylini import qilamiz
-
+ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2
 TOKEN = config.TELEGRAM_TOKEN
 application = ApplicationBuilder().token(TOKEN).build()
 
