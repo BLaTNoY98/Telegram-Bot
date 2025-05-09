@@ -49,6 +49,12 @@ def init_db(# leads jadvali
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     """)
-
+def is_operator(telegram_id: int) -> bool:
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM operators WHERE telegram_id = ?", (telegram_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
     conn.commit()
     conn.close()
