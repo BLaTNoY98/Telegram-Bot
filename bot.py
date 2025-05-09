@@ -15,7 +15,8 @@ import db  # db.py faylini import qilamiz
 ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
 TOKEN = config.TELEGRAM_TOKEN
 application = ApplicationBuilder().token(TOKEN).build()
-
+application.add_handler(CommandHandler("start", start))
+application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
 # /start komandasi
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
