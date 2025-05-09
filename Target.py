@@ -1,100 +1,89 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes, CallbackQueryHandler, ConversationHandler
-import db
+# target.py
 
-# Targetolog paneli menyusi
-async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
+import db
+from datetime import datetime, timedelta
+
+def build_target_menu():
     keyboard = [
         [InlineKeyboardButton("Buyurtmalarim", callback_data="my_orders")],
         [InlineKeyboardButton("Balansim", callback_data="my_balance")],
         [InlineKeyboardButton("Statistika", callback_data="my_stats")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Targetolog paneliga xush kelibsiz:", reply_markup=reply_markup)
+    return InlineKeyboardMarkup(keyboard)
 
-# Buyurtmalarim bo‘limi
-async def my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
+def build_lead_filter_menu():
     keyboard = [
-        [InlineKeyboardButton("Yangi", callback_data="orders_new")],
-        [InlineKeyboardButton("Qabul qilindi", callback_data="orders_accepted")],
-        [InlineKeyboardButton("Yetkazilmoqda", callback_data="orders_delivering")],
-        [InlineKeyboardButton("Yetkazildi", callback_data="orders_delivered")],
-        [InlineKeyboardButton("Arxivlandi", callback_data="orders_archived")]
+        [InlineKeyboardButton("Yangi", callback_data="leads_new")],
+        [InlineKeyboardButton("Qabul qilindi", callback_data="leads_accepted")],
+        [InlineKeyboardButton("Yetkazilmoqda", callback_data="leads_shipping")],
+        [InlineKeyboardButton("Yetkazildi", callback_data="leads_delivered")],
+        [InlineKeyboardButton("Arxiv", callback_data="leads_archived")],
+        [InlineKeyboardButton("Ortga", callback_data="back_to_panel")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text("Buyurtmalaringizni status bo‘yicha tanlang:", reply_markup=reply_markup)
+    return InlineKeyboardMarkup(keyboard)
 
-async def list_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    status = query.data.replace("orders_", "")
-    user_id = query.from_user.id
-
-    orders = db.get_targetolog_leads_by_status(user_id, status)
-    if not orders:
-        await query.edit_message_text("Bu bo‘limda buyurtmalar topilmadi.")
+async def target_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not db.is_targetolog(user_id):
+        await update.message.reply_text("Siz ro‘yxatdan o‘tgan targetolog emassiz.")
         return
+    await update.message.reply_text("Targetolog paneli:", reply_markup=build_target_menu())
 
-    text = f"{status.upper()} holatidagi buyurtmalaringiz:\n\n"
-    for lead in orders:
-        text += f"Ism: {lead['name']}\nTelefon: {lead['phone']}\nManzil: {lead.get('address', '-')}\n\n"
-    
-    await query.edit_message_text(text)
-
-# Balans bo‘limi
-async def my_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_target_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    data = query.data
+    telegram_id = query.from_user.id
+    targetolog_id = db.get_targetolog_id(telegram_id)
 
-    user_id = query.from_user.id
-    hold_balance = db.get_hold_balance(user_id)
-    main_balance = db.get_main_balance(user_id)
+    if data == "my_orders":
+        await query.message.edit_text("Buyurtmalar holatini tanlang:", reply_markup=build_lead_filter_menu())
 
-    keyboard = [[InlineKeyboardButton("Pul yechish arizasi", callback_data="withdraw_request")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    elif data.startswith("leads_"):
+        status = data.split("_")[1]
+        status_map = {
+            "new": "new",
+            "accepted": "accepted",
+            "shipping": "shipping",
+            "delivered": "delivered",
+            "archived": "archived"
+        }
+        leads = db.get_leads_by_targetolog_and_status(targetolog_id, status_map[status])
+        if not leads:
+            await query.message.edit_text("Bu holatda buyurtmalar topilmadi.", reply_markup=build_lead_filter_menu())
+            return
 
-    text = (
-        f"Balansingiz:\n\n"
-        f"Hold balans: {hold_balance} so‘m\n"
-        f"Asosiy balans: {main_balance} so‘m"
-    )
-    await query.edit_message_text(text, reply_markup=reply_markup)
+        text = "\n\n".join([f"{i+1}. {lead[1]} - {lead[2]}\nManzil: {lead[3]}" for i, lead in enumerate(leads)])
+        await query.message.edit_text(f"Buyurtmalar ({status_map[status]}):\n\n{text}", reply_markup=build_lead_filter_menu())
 
-async def withdraw_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+    elif data == "my_balance":
+        hold, main = db.get_targetolog_balances(targetolog_id)
+        keyboard = [[InlineKeyboardButton("Pul yechish uchun ariza", callback_data="withdraw_request")],
+                    [InlineKeyboardButton("Ortga", callback_data="back_to_panel")]]
+        text = f"Hold balans: {hold} so‘m\nAsosiy balans: {main} so‘m"
+        await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
-    user_id = query.from_user.id
-    db.create_withdrawal_request(user_id)  # Bu funktsiyani db.py faylingizda yozishingiz kerak
-    await query.edit_message_text("Pul yechish arizangiz qabul qilindi. Tez orada ko‘rib chiqiladi.")
+    elif data == "withdraw_request":
+        db.add_withdrawal_request(targetolog_id)
+        await query.message.edit_text("Pul yechish uchun ariza yuborildi.", reply_markup=build_target_menu())
 
-# Statistika
-async def my_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+    elif data == "my_stats":
+        stats = db.get_targetolog_stats(targetolog_id)
+        text = (
+            f"Kunlik: {stats['daily']}\n"
+            f"Haftalik: {stats['weekly']}\n"
+            f"Oylik: {stats['monthly']}"
+        )
+        keyboard = [[InlineKeyboardButton("Ortga", callback_data="back_to_panel")]]
+        await query.message.edit_text(f"Leadlar statistikasi:\n\n{text}", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    user_id = query.from_user.id
-    daily = db.get_daily_stats(user_id)
-    weekly = db.get_weekly_stats(user_id)
-    monthly = db.get_monthly_stats(user_id)
+    elif data == "back_to_panel":
+        await query.message.edit_text("Targetolog paneli:", reply_markup=build_target_menu())
 
-    text = (
-        "Sotuv statistikasi:\n\n"
-        f"Kunlik: {daily} ta\n"
-        f"Haftalik: {weekly} ta\n"
-        f"Oylik: {monthly} ta"
-    )
-    await query.edit_message_text(text)
-
-# Callback handlerlarni ro‘yxatga olish
-def get_targetolog_handlers():
+def get_handlers():
     return [
-        CallbackQueryHandler(my_orders, pattern="^my_orders$"),
-        CallbackQueryHandler(list_orders, pattern="^orders_"),
-        CallbackQueryHandler(my_balance, pattern="^my_balance$"),
-        CallbackQueryHandler(withdraw_request, pattern="^withdraw_request$"),
-        CallbackQueryHandler(my_stats, pattern="^my_stats$")
+        CommandHandler("start", target_start),
+        CallbackQueryHandler(handle_target_buttons, pattern="^(my_orders|leads_.*|my_balance|withdraw_request|my_stats|back_to_panel)$")
     ]
