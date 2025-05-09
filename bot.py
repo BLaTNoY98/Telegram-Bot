@@ -90,7 +90,7 @@ for i, (name, count) in enumerate(rows, 1):
 
 await update.message.reply_text(text, parse_mode="Markdown")
 
-Operator qo‘shish
+'Operator qo‘shish'
 
 operator_temp_data = {}
 
