@@ -7,7 +7,7 @@ def init_db():
     conn = connect()
     cursor = conn.cursor()
 
-    # Operators (Alohida panelga kiradiganlar)
+    # Operators
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS operators (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,7 +19,7 @@ def init_db():
         );
     """)
 
-    # Targetologlar (Reklama orqali lead tashuvchilar)
+    # Targetologlar
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS targetologlar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,14 +29,14 @@ def init_db():
         );
     """)
 
-    # Leadlar (Buyurtmalar)
+    # Leadlar
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
             phone TEXT,
             address TEXT,
-            status TEXT DEFAULT 'new',  -- new, accepted, rejected, delivering, delivered, returned
+            status TEXT DEFAULT 'new',
             operator_id INTEGER,
             targetolog_id INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -45,7 +45,7 @@ def init_db():
         );
     """)
 
-    # Savdolar (targetologga tushganlar)
+    # Savdolar
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sales (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,10 +56,17 @@ def init_db():
         );
     """)
 
+    # Foydalanuvchilar (ro‘yxatdan o‘tganlar)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            telegram_id INTEGER PRIMARY KEY,
+            phone_number TEXT
+        );
+    """)
+
     conn.commit()
     conn.close()
 
-# Operator tekshirish
 def is_operator(telegram_id: int) -> bool:
     conn = connect()
     cursor = conn.cursor()
@@ -68,7 +75,6 @@ def is_operator(telegram_id: int) -> bool:
     conn.close()
     return result is not None
 
-# Targetolog tekshirish
 def is_targetolog(telegram_id: int) -> bool:
     conn = connect()
     cursor = conn.cursor()
@@ -76,3 +82,18 @@ def is_targetolog(telegram_id: int) -> bool:
     result = cursor.fetchone()
     conn.close()
     return result is not None
+
+def is_registered(telegram_id: int) -> bool:
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM users WHERE telegram_id = ?", (telegram_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
+
+def register_user(telegram_id: int, phone_number: str):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO users (telegram_id, phone_number) VALUES (?, ?)", (telegram_id, phone_number))
+    conn.commit()
+    conn.close()
