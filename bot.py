@@ -56,8 +56,9 @@ await update.message.reply_text(
 
 # Kontaktni qabul qilish
 
-async async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
+    # bu yerga funksiyani davom ettiring
     contact = update.message.contact
 
     if contact is None or contact.phone_number is None:
