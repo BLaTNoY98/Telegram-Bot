@@ -208,4 +208,11 @@ async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Operator paneliga xush kelibsiz:", reply_markup=reply_markup)
+    @application.message_handler(commands=['start'])
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    telegram_id = update.effective_user.id
+    if is_operator(telegram_id):
+        await show_operator_panel(update, context)
+    else:
+        await update.message.reply_text("Siz operator emassiz yoki ruxsat berilmagan foydalanuvchisiz.")
     application.run_polling()
