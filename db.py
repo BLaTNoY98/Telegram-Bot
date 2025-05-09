@@ -3,7 +3,6 @@ import sqlite3
 
 def connect():
     return sqlite3.connect("data.db")
-ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2
 def init_db():CREATE TABLE IF NOT EXISTS operators (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     telegram_id INTEGER UNIQUE,
