@@ -27,7 +27,16 @@ operator_temp_data = {}
 
 # DB ni ishga tushirish
 db.init_db()
+# PANEL funksiyasi: operator yoki targetolog panelini ochish
+async def handle_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
 
+    if db.is_operator(user_id):
+        await show_operator_panel(update, context)
+    elif db.is_targetolog(user_id):
+        await show_targetolog_panel(update, context)
+    else:
+        await update.message.reply_text("Siz hali ro'yxatdan o'tmagansiz yoki tasdiqlanmagansiz.")
 # Panel funksiyasi
 async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
