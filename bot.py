@@ -1,4 +1,8 @@
 import logging
+import os
+print("Current working directory:", os.getcwd())
+import sys
+print("Python path:", sys.path)
 from telegram import (
     Update,
     InlineKeyboardButton,
