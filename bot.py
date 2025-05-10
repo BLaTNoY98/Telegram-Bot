@@ -20,6 +20,11 @@ from telegram.ext import (
 )
 from admin import get_handlers
 sys.path.append('.')
+import os
+import sys
+
+# Loyihani ishchi katalogini qo‘shamiz
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from target import get_targetolog_handlers
 from operator import get_operator_panel_handlers
 import config
