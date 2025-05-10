@@ -95,7 +95,7 @@ async def view_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.edit_message_text(f"Hold balans: {hold} so‘m\nAsosiy balans: {main} so‘m")
 
 # Handlerlar ro‘yxatini qaytarish
-def get_operator_handlers():
+def get_operator_panel_handlers():
     return [
         CallbackQueryHandler(view_new_leads, pattern="^view_new_leads$"),
         CallbackQueryHandler(callback_lead, pattern="^callback_"),
