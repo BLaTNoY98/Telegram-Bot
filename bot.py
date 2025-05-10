@@ -33,15 +33,12 @@ logging.basicConfig(level=logging.INFO)
 # DB ni ishga tushuramiz
 db.init_db()
 
-# Ro‘yxatdan o‘tgan foydalanuvchilarni saqlash (bir martalik tekshiruv uchun)
-registered_users = set()
-
 
 # /start komandasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
-    if user_id in registered_users or db.is_registered(user_id):
+    if db.is_registered(user_id):
         if db.is_operator(user_id):
             await show_operator_panel(update, context)
         elif db.is_targetolog(user_id):
@@ -50,6 +47,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Siz hali tasdiqlanmagansiz.")
         return
 
+    # Agar foydalanuvchi hali ro‘yxatdan o‘tmagan bo‘lsa
     contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
     keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
 
@@ -71,8 +69,9 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     user_id = update.effective_user.id
+
+    # Raqamni DBga saqlaymiz
     db.register_user(user_id, contact.phone_number)
-    registered_users.add(user_id)
 
     if db.is_operator(user_id):
         await update.message.reply_text("Operator sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
@@ -81,7 +80,7 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Targetolog sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
         await show_targetolog_panel(update, context)
     else:
-        await update.message.reply_text("Siz ro‘yxatdan o‘tdingiz, ammo hali tasdiqlanmagansiz.")
+        await update.message.reply_text("Raqamingiz saqlandi, ammo hali tasdiqlanmagansiz.")
 
 
 # Operator paneli
