@@ -39,7 +39,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if db.is_registered(user_id):
-        if db.is_admin(user_id):  # ADMIN TEKSHIRISH QO‘SHILDI
+        if user_id in config.ADMIN_IDS:  # ADMIN TEKSHIRISH QO‘SHILDI
             await update.message.reply_text("Admin paneliga xush kelibsiz.")
         elif db.is_operator(user_id):
             await show_operator_panel(update, context)
@@ -81,6 +81,9 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif db.is_targetolog(user_id):
         await update.message.reply_text("Targetolog sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
         await show_targetolog_panel(update, context)
+    elif user_id in config.ADMIN_IDS:
+        await update.message.reply_text("Admin sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
+        # Agar kerak bo‘lsa, admin panelni shu yerda ochishingiz mumkin
     else:
         await update.message.reply_text("Raqamingiz saqlandi, ammo hali tasdiqlanmagansiz.")
 
@@ -136,6 +139,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("Sotuv qo‘shish funksiyasi hali mavjud emas.")
         else:
             await query.edit_message_text("Noma’lum tugma.")
+    elif user_id in config.ADMIN_IDS:
+        await query.edit_message_text("Admin panelda tugma bosildi.")
     else:
         await query.edit_message_text("Sizda panelga kirish huquqi yo‘q.")
 
