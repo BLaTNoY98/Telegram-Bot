@@ -26,8 +26,8 @@ from telegram.ext import (
 
 from admin import get_handlers
 from target import get_handlers as get_targetolog_handlers
-from operator import get_operator_panel_handlers
 
+from operator_panel import get_operator_panel_handlers
 import config
 import db
 
