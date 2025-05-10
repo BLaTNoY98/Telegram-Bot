@@ -71,7 +71,7 @@ def init_db():
         );
     """)
 
-    # Sales (for targetolog statistics)
+    # Sales
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sales (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,7 +98,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# === Basic Role Checks ===
+# =================== Role checks ===================
 
 def is_operator(telegram_id: int) -> bool:
     conn = connect()
@@ -131,7 +131,77 @@ def register_user(telegram_id: int, phone_number: str):
     conn.commit()
     conn.close()
 
-# === Lead Unique ID Generator ===
+# =================== Lead ID generator ===================
 
 def generate_lead_uid(lead_id: int) -> str:
     return f"L{str(lead_id).zfill(5)}"
+
+# =================== Admin panel functions ===================
+
+def add_operator(name, telegram_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO operators (name, telegram_id) VALUES (?, ?)", (name, telegram_id))
+    conn.commit()
+    conn.close()
+
+def get_all_operators():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, telegram_id, is_blocked FROM operators")
+    return cursor.fetchall()
+
+def add_targetolog(name, telegram_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO targetologlar (name, telegram_id) VALUES (?, ?)", (name, telegram_id))
+    conn.commit()
+    conn.close()
+
+def get_all_targetologs():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, telegram_id, is_blocked FROM targetologlar")
+    return cursor.fetchall()
+
+def count_operators():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM operators")
+    return cursor.fetchone()[0]
+
+def count_targetologs():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM targetologlar")
+    return cursor.fetchone()[0]
+
+def count_leads():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM leads")
+    return cursor.fetchone()[0]
+
+# =================== Products ===================
+
+def add_product(title, description, video, price_operator, price_targetolog):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO products (title, description, video, price_operator, price_targetolog)
+        VALUES (?, ?, ?, ?, ?)
+    """, (title, description, video, price_operator, price_targetolog))
+    conn.commit()
+    conn.close()
+
+def get_all_products():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, title, description, video, price_operator, price_targetolog, is_active FROM products")
+    return cursor.fetchall()
+
+def get_product_by_id(product_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
+    return cursor.fetchone()
