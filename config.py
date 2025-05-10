@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Bot token
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 # Adminlar ro'yxati (int ko'rinishida)
 ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "").split(",")))
