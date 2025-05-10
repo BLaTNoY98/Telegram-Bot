@@ -1,8 +1,14 @@
 import logging
+import logging
 import os
-print("Current working directory:", os.getcwd())
 import sys
+
+# Joriy katalogni sys.path ga qo‘shamiz
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+print("Current working directory:", os.getcwd())
 print("Python path:", sys.path)
+
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -18,23 +24,18 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
-from admin import get_handlers
-sys.path.append('.')
-import os
-import sys
 
-# Loyihani ishchi katalogini qo‘shamiz
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from admin import get_handlers
 from target import get_targetolog_handlers
 from operator import get_operator_panel_handlers
+
 import config
 import db
 
 logging.basicConfig(level=logging.INFO)
 
-# DB ni ishga tushiramiz
+# DB ni ishga tushuramiz
 db.init_db()
-
 # Faqat bir marta raqam so‘rash uchun
 registered_users = set()
 
