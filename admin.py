@@ -1,5 +1,3 @@
-# admin.py
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes,
@@ -11,15 +9,16 @@ from telegram.ext import (
 )
 import db
 
-# Ruxsat berilgan adminlar ro‘yxati
-ADMINS = [1471552584]  # Agar boshqa adminlar bo‘lsa, shu yerga qo‘shing
+ADMINS = [1471552584]
 
 # Bosqichlar
 ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
 ADD_TARGETOLOG_NAME, ADD_TARGETOLOG_ID = range(2, 4)
+ADD_PRODUCT_TITLE, ADD_PRODUCT_DESC, ADD_PRODUCT_VIDEO, ADD_PRODUCT_PRICE_OP, ADD_PRODUCT_PRICE_TG = range(4, 9)
 
 operator_temp_data = {}
 targetolog_temp_data = {}
+product_temp_data = {}
 
 def is_admin(user_id):
     return user_id in ADMINS
@@ -37,11 +36,11 @@ async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("Operatorlar ro‘yxati", callback_data="list_operators")],
         [InlineKeyboardButton("Targetologlar ro‘yxati", callback_data="list_targetologs")],
         [InlineKeyboardButton("Statistika", callback_data="show_stats")],
+        [InlineKeyboardButton("Mahsulot qo‘shish", callback_data="add_product")],
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Admin paneliga xush kelibsiz:", reply_markup=reply_markup)
+    await update.message.reply_text("Admin paneliga xush kelibsiz:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-# Tugmalarni qayta ishlash
+# Callback tugmalar
 async def admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -57,87 +56,128 @@ async def admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "list_operators":
         operators = db.get_all_operators()
-        if not operators:
-            await query.message.reply_text("Operatorlar topilmadi.")
-        else:
-            msg = "\n".join([f"{op[0]}: {op[1]} (ID: {op[2]})" for op in operators])
-            await query.message.reply_text(f"Operatorlar:\n{msg}")
+        msg = "\n".join([f"{op[0]}: {op[1]} (ID: {op[2]})" for op in operators]) if operators else "Operatorlar topilmadi."
+        await query.message.reply_text(msg)
         return ConversationHandler.END
 
     if data == "list_targetologs":
         targetologs = db.get_all_targetologs()
-        if not targetologs:
-            await query.message.reply_text("Targetologlar topilmadi.")
-        else:
-            msg = "\n".join([f"{tg[0]}: {tg[1]} (ID: {tg[2]})" for tg in targetologs])
-            await query.message.reply_text(f"Targetologlar:\n{msg}")
+        msg = "\n".join([f"{tg[0]}: {tg[1]} (ID: {tg[2]})" for tg in targetologs]) if targetologs else "Targetologlar topilmadi."
+        await query.message.reply_text(msg)
         return ConversationHandler.END
 
     if data == "show_stats":
-        operator_count = db.count_operators()
-        targetolog_count = db.count_targetologs()
-        lead_count = db.count_leads()
         msg = (
             f"Statistika:\n"
-            f"Operatorlar: {operator_count}\n"
-            f"Targetologlar: {targetolog_count}\n"
-            f"Leadlar: {lead_count}"
+            f"Operatorlar: {db.count_operators()}\n"
+            f"Targetologlar: {db.count_targetologs()}\n"
+            f"Leadlar: {db.count_leads()}"
         )
         await query.message.reply_text(msg)
         return ConversationHandler.END
 
-# Operator qo‘shish - ism
+    if data == "add_product":
+        await query.message.reply_text("Mahsulot nomini yuboring:")
+        return ADD_PRODUCT_TITLE
+
+# Operator qo‘shish
 async def add_operator_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     operator_temp_data["name"] = update.message.text
     await update.message.reply_text("Operator Telegram ID sini yuboring:")
     return ADD_OPERATOR_ID
 
-# Operator qo‘shish - ID
 async def add_operator_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         telegram_id = int(update.message.text)
         name = operator_temp_data["name"]
         db.add_operator(name, telegram_id)
-        await update.message.reply_text("✅ Operator muvaffaqiyatli qo‘shildi.")
+        await update.message.reply_text("✅ Operator qo‘shildi.")
     except ValueError:
-        await update.message.reply_text("❌ ID faqat raqamlardan iborat bo‘lishi kerak.")
+        await update.message.reply_text("❌ ID raqam bo‘lishi kerak.")
     except Exception as e:
         await update.message.reply_text(f"Xatolik: {e}")
     return ConversationHandler.END
 
-# Targetolog qo‘shish - ism
+# Targetolog qo‘shish
 async def add_targetolog_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     targetolog_temp_data["name"] = update.message.text
     await update.message.reply_text("Targetolog Telegram ID sini yuboring:")
     return ADD_TARGETOLOG_ID
 
-# Targetolog qo‘shish - ID
 async def add_targetolog_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         telegram_id = int(update.message.text)
         name = targetolog_temp_data["name"]
         db.add_targetolog(name, telegram_id)
-        await update.message.reply_text("✅ Targetolog muvaffaqiyatli qo‘shildi.")
+        await update.message.reply_text("✅ Targetolog qo‘shildi.")
     except ValueError:
-        await update.message.reply_text("❌ ID faqat raqamlardan iborat bo‘lishi kerak.")
+        await update.message.reply_text("❌ ID raqam bo‘lishi kerak.")
     except Exception as e:
         await update.message.reply_text(f"Xatolik: {e}")
     return ConversationHandler.END
 
-# Handlerlar ro‘yxatini qaytarish
+# Mahsulot qo‘shish
+async def add_product_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    product_temp_data["title"] = update.message.text
+    await update.message.reply_text("Mahsulot tavsifini yuboring:")
+    return ADD_PRODUCT_DESC
+
+async def add_product_desc(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    product_temp_data["description"] = update.message.text
+    await update.message.reply_text("Video linkini yuboring:")
+    return ADD_PRODUCT_VIDEO
+
+async def add_product_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    product_temp_data["video_url"] = update.message.text
+    await update.message.reply_text("Operator uchun narxni yuboring:")
+    return ADD_PRODUCT_PRICE_OP
+
+async def add_product_price_op(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        product_temp_data["price_operator"] = float(update.message.text)
+        await update.message.reply_text("Targetolog uchun narxni yuboring:")
+        return ADD_PRODUCT_PRICE_TG
+    except ValueError:
+        await update.message.reply_text("Narx noto‘g‘ri. Iltimos, son kiriting.")
+        return ADD_PRODUCT_PRICE_OP
+
+async def add_product_price_tg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        product_temp_data["price_targetolog"] = float(update.message.text)
+        db.add_product(
+            product_temp_data["title"],
+            product_temp_data["description"],
+            product_temp_data["video_url"],
+            product_temp_data["price_operator"],
+            product_temp_data["price_targetolog"]
+        )
+        await update.message.reply_text("✅ Mahsulot muvaffaqiyatli qo‘shildi.")
+    except ValueError:
+        await update.message.reply_text("Narx noto‘g‘ri. Iltimos, son kiriting.")
+    except Exception as e:
+        await update.message.reply_text(f"Xatolik: {e}")
+    return ConversationHandler.END
+
+# Handlerlar
 def get_handlers():
     return [
         CommandHandler("admin", admin_start),
         ConversationHandler(
             entry_points=[
-                CallbackQueryHandler(admin_buttons, pattern="add_operator|add_targetolog|list_operators|list_targetologs|show_stats")
+                CallbackQueryHandler(admin_buttons, pattern="add_operator|add_targetolog|list_operators|list_targetologs|show_stats|add_product")
             ],
             states={
                 ADD_OPERATOR_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_name)],
                 ADD_OPERATOR_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_id)],
                 ADD_TARGETOLOG_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_targetolog_name)],
                 ADD_TARGETOLOG_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_targetolog_id)],
+                ADD_PRODUCT_TITLE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_product_title)],
+                ADD_PRODUCT_DESC: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_product_desc)],
+                ADD_PRODUCT_VIDEO: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_product_video)],
+                ADD_PRODUCT_PRICE_OP: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_product_price_op)],
+                ADD_PRODUCT_PRICE_TG: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_product_price_tg)],
             },
             fallbacks=[],
+            per_message=True
         )
     ]
