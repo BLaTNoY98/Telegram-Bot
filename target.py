@@ -1,10 +1,9 @@
-
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
 import db
 from datetime import datetime, timedelta
 
+# Targetolog menyusi
 def build_target_menu():
     keyboard = [
         [InlineKeyboardButton("Buyurtmalarim", callback_data="my_orders")],
@@ -13,6 +12,7 @@ def build_target_menu():
     ]
     return InlineKeyboardMarkup(keyboard)
 
+# Lead holatlari bo‘yicha filtr menyusi
 def build_lead_filter_menu():
     keyboard = [
         [InlineKeyboardButton("Yangi", callback_data="leads_new")],
@@ -24,6 +24,7 @@ def build_lead_filter_menu():
     ]
     return InlineKeyboardMarkup(keyboard)
 
+# /start komandasi uchun handler
 async def target_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not db.is_targetolog(user_id):
@@ -31,6 +32,7 @@ async def target_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await update.message.reply_text("Targetolog paneli:", reply_markup=build_target_menu())
 
+# Barcha tugmalar uchun callback handler
 async def handle_target_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -60,8 +62,10 @@ async def handle_target_buttons(update: Update, context: ContextTypes.DEFAULT_TY
 
     elif data == "my_balance":
         hold, main = db.get_targetolog_balances(targetolog_id)
-        keyboard = [[InlineKeyboardButton("Pul yechish uchun ariza", callback_data="withdraw_request")],
-                    [InlineKeyboardButton("Ortga", callback_data="back_to_panel")]]
+        keyboard = [
+            [InlineKeyboardButton("Pul yechish uchun ariza", callback_data="withdraw_request")],
+            [InlineKeyboardButton("Ortga", callback_data="back_to_panel")]
+        ]
         text = f"Hold balans: {hold} so‘m\nAsosiy balans: {main} so‘m"
         await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -82,7 +86,8 @@ async def handle_target_buttons(update: Update, context: ContextTypes.DEFAULT_TY
     elif data == "back_to_panel":
         await query.message.edit_text("Targetolog paneli:", reply_markup=build_target_menu())
 
-def get_handlers():
+# Asosiy handler ro‘yxati
+def get_targetolog_panel_handlers():
     return [
         CommandHandler("start", target_start),
         CallbackQueryHandler(handle_target_buttons, pattern="^(my_orders|leads_.*|my_balance|withdraw_request|my_stats|back_to_panel)$")
