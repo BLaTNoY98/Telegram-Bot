@@ -22,7 +22,7 @@ from telegram.ext import (
 )
 
 from admin import get_handlers as get_admin_handlers
-from target import get_targetolog_handlers
+from target import get_targetolog_panel_handlers
 from operator_panel import get_operator_panel_handlers
 
 import config
