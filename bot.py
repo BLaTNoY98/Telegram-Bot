@@ -19,6 +19,7 @@ from telegram.ext import (
     filters
 )
 from admin import get_handlers
+sys.path.append('.')
 from target import get_targetolog_handlers
 from operator import get_operator_panel_handlers
 import config
