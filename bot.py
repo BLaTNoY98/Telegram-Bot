@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     # Modul handlerlarini qo‘shamiz
     application.add_handlers(get_operator_panel_handlers())
-    application.add_handlers(get_targetolog_handlers())
+    application.add_handlers(get_targetolog_panel_handlers())
     application.add_handlers(get_admin_handlers())
 
     application.run_polling()
