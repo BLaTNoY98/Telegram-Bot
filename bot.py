@@ -39,7 +39,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if db.is_registered(user_id):
-        if db.is_operator(user_id):
+        if db.is_admin(user_id):  # ADMIN TEKSHIRISH QO‘SHILDI
+            await update.message.reply_text("Admin paneliga xush kelibsiz.")
+        elif db.is_operator(user_id):
             await show_operator_panel(update, context)
         elif db.is_targetolog(user_id):
             await show_targetolog_panel(update, context)
