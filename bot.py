@@ -341,8 +341,10 @@ if __name__ == '__main__':
         application.add_handler(handler)
 
     print("Bot ishga tushdi...")
+    import asyncio
+
+async def main():
     await application.run_polling()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())
-    application.run_polling()
