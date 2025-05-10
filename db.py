@@ -237,3 +237,8 @@ def update_lead_status_and_address(lead_uid, status, address=None):
         cursor.execute("UPDATE leads SET status = ? WHERE lead_uid = ?", (status, lead_uid))
     conn.commit()
     conn.close()
+
+# =================== Admin check ===================
+
+def is_admin(telegram_id: int) -> bool:
+    return telegram_id in [1471552584]  # Adminlar ro'yxati shu yerda
