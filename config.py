@@ -5,4 +5,4 @@ load_dotenv()
 
 # Environment Variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID"))
+ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS").split(",")))
