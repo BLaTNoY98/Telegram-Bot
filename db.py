@@ -205,3 +205,35 @@ def get_product_by_id(product_id):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
     return cursor.fetchone()
+
+# =================== Qo‘shimcha funksiyalar ===================
+
+def toggle_product_status(product_id, is_active):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE products SET is_active = ? WHERE id = ?", (is_active, product_id))
+    conn.commit()
+    conn.close()
+
+def get_active_products():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM products WHERE is_active = 1")
+    return cursor.fetchall()
+
+def update_withdrawal_status(withdrawal_id, new_status):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (new_status, withdrawal_id))
+    conn.commit()
+    conn.close()
+
+def update_lead_status_and_address(lead_uid, status, address=None):
+    conn = connect()
+    cursor = conn.cursor()
+    if address:
+        cursor.execute("UPDATE leads SET status = ?, address = ? WHERE lead_uid = ?", (status, address, lead_uid))
+    else:
+        cursor.execute("UPDATE leads SET status = ? WHERE lead_uid = ?", (status, lead_uid))
+    conn.commit()
+    conn.close()
