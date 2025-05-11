@@ -174,11 +174,12 @@ def unblock_operator(operator_id):
         c.execute("UPDATE operators SET is_blocked = 0 WHERE id = ?", (operator_id,))
         conn.commit()
 
+def unblock_targetolog(user_id):
+    cursor.execute("UPDATE users SET is_blocked = 0 WHERE user_id = ? AND role = 'targetolog'", (user_id,))
+    conn.commit()
+
 def block_targetolog(user_id):
     cursor.execute("UPDATE users SET is_blocked = 1 WHERE user_id = ? AND role = 'targetolog'", (user_id,))
-    conn.commit()
-    def unblock_targetolog(user_id):
-    cursor.execute("UPDATE users SET is_blocked = 0 WHERE user_id = ? AND role = 'targetolog'", (user_id,))
     conn.commit()
 
 def update_withdraw_status(withdraw_id, status):
