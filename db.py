@@ -223,13 +223,6 @@ def get_product(product_id):
     cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
     return cursor.fetchone()
 
-def update_product(product_id, title, description, video, price_operator, price_targetolog, is_active):
-    cursor.execute("""
-        UPDATE products
-        SET title = ?, description = ?, video = ?, price_operator = ?, price_targetolog = ?, is_active = ?
-        WHERE id = ?
-    """, (title, description, video, price_operator, price_targetolog, is_active, product_id))
-    conn.commit()
 def init_db():
     with sqlite3.connect(DB_NAME) as conn:
         cursor = conn.cursor()
@@ -244,4 +237,16 @@ def init_db():
         )
         """)
         conn.commit()
+
+# Bu chaqiruv funksiyadan TASHQARIDA bo‘lishi kerak
+
+
+def update_product(product_id, title, description, video, price_operator, price_targetolog, is_active):
+    cursor.execute("""
+        UPDATE products
+        SET title = ?, description = ?, video = ?, price_operator = ?, price_targetolog = ?, is_active = ?
+        WHERE id = ?
+    """, (title, description, video, price_operator, price_targetolog, is_active, product_id))
+    conn.commit()
+
         init_db()
