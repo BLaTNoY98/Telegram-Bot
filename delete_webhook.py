@@ -1,6 +1,9 @@
+import os
 import requests
+from dotenv import load_dotenv
 
-BOT_TOKEN = "8079107774:AAE5gujyjgvY89EShQJ7fP3gtf-QtVzdB6Q"
+load_dotenv()
+BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook"
 response = requests.get(url)
-print(response.json())
+print("Webhook delete response:", response.json())
