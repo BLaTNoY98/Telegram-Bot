@@ -184,13 +184,13 @@ if __name__ == "__main__":
     application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     application.add_handler(CallbackQueryHandler(callback_handler))
 
-  for handler in get_operator_panel_handlers():
+    for handler in get_operator_panel_handlers():
     application.add_handler(handler)
 
-for handler in get_targetolog_panel_handlers():
+    for handler in get_targetolog_panel_handlers():
     application.add_handler(handler)
 
-for handler in get_admin_handlers():
+    for handler in get_admin_handlers():
     application.add_handler(handler)
 
     application.run_polling()
