@@ -185,6 +185,7 @@ def block_targetolog(user_id):
 def update_withdraw_status(withdraw_id, status):
     cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (status, withdraw_id))
     conn.commit()
+    
     def get_statistics():
     with sqlite3.connect(DB_NAME) as conn:
         c = conn.cursor()
@@ -202,6 +203,7 @@ def update_withdraw_status(withdraw_id, status):
             "total_operators": total_operators,
             "total_targetologs": total_targetologs
         }
+    
 
 def add_product(title, description, video, price_operator, price_targetolog):
     cursor.execute("""
