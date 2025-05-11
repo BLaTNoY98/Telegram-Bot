@@ -229,9 +229,17 @@ def update_product(product_id, title, description, video, price_operator, price_
     """, (title, description, video, price_operator, price_targetolog, is_active, product_id))
     conn.commit()
 def init_db():
-    cursor.execute("""CREATE TABLE IF NOT EXISTS users (...)""")
-    ...
-    conn.commit()
-
-# Hammasi tugaganidan keyin eng pastga qo‘shing:
-init_db()
+    with sqlite3.connect(DB_NAME) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tg_id INTEGER UNIQUE,
+            name TEXT,
+            phone TEXT,
+            role TEXT,
+            is_blocked INTEGER DEFAULT 0
+        )
+        """)
+        conn.commit()
+        init_db()
