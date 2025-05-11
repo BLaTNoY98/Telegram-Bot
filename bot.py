@@ -179,8 +179,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Botni ishga tushurish
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    
     application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
