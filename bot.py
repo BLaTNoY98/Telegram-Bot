@@ -3,12 +3,7 @@ import os
 import sys
 import requests
 
-# Webhookni o‘chirish faqat 1 marta kerak bo‘ladi
-def delete_webhook():
-    BOT_TOKEN = "8079107774:AAExS1ZDAgt3aJOE5GkAvYV1MJlaSMU2YFw"  # tokeningizni yozing
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook"
-    response = requests.get(url)
-    print("Webhook delete response:", response.json())
+
 
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -183,7 +178,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Botni ishga tushurish
     if __name__ == "__main__":
-    delete_webhook()
+    
     application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
