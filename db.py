@@ -187,20 +187,24 @@ def update_withdraw_status(withdraw_id, status):
     conn.commit()
 
 def get_statistics():
-    cursor.execute("SELECT COUNT(*) FROM leads")
-    total_leads = cursor.fetchone()[0]
+def get_statistics():
+    with sqlite3.connect(DB_NAME) as conn:
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'operator'")
-    total_operators = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM leads")
+        total_leads = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'targetolog'")
-    total_targetologs = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'operator'")
+        total_operators = cursor.fetchone()[0]
 
-    return {
-        "total_leads": total_leads,
-        "total_operators": total_operators,
-        "total_targetologs": total_targetologs
-    }
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'targetolog'")
+        total_targetologs = cursor.fetchone()[0]
+
+        return {
+            "total_leads": total_leads,
+            "total_operators": total_operators,
+            "total_targetologs": total_targetologs
+        }
     
 
 def add_product(title, description, video, price_operator, price_targetolog):
