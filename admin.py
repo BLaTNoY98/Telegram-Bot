@@ -7,7 +7,7 @@ from db import (get_all_operators, block_operator, unblock_operator,
 
 def admin_panel(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
-    if user_id not in ADMINS:
+    if user_id not in ADMIN_IDS:
         return
 
     keyboard = [
