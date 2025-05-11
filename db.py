@@ -1,10 +1,8 @@
-# db.py
 import sqlite3
 
 # ==== DB ulanish ====
 def connect():
     return sqlite3.connect("data.db")
-
 
 # ==== Dastlabki jadval yaratish ====
 def init_db():
@@ -35,7 +33,7 @@ def init_db():
         );
     """)
 
-    # Foydalanuvchilar jadvali (faqat telefon uchun)
+    # Foydalanuvchilar jadvali
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             telegram_id INTEGER PRIMARY KEY,
@@ -234,4 +232,33 @@ def update_withdrawal_status(withdrawal_id, new_status):
 
 # ==== Admin tekshiruvi ====
 def is_admin(telegram_id: int) -> bool:
-    return telegram_id in [1471552584]  # Adminlar ro'yxati shu yerda
+    return telegram_id in [1471552584]
+
+# ==== Operator va Targetolog bloklash ====
+def block_operator(operator_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE operators SET is_blocked = 1 WHERE id = ?", (operator_id,))
+    conn.commit()
+    conn.close()
+
+def unblock_operator(operator_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE operators SET is_blocked = 0 WHERE id = ?", (operator_id,))
+    conn.commit()
+    conn.close()
+
+def block_targetolog(targetolog_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE targetologlar SET is_blocked = 1 WHERE id = ?", (targetolog_id,))
+    conn.commit()
+    conn.close()
+
+def unblock_targetolog(targetolog_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE targetologlar SET is_blocked = 0 WHERE id = ?", (targetolog_id,))
+    conn.commit()
+    conn.close()
