@@ -224,29 +224,19 @@ def count_leads_by_targetolog(targetolog_id, period='day'):
     conn.close()
     return result
 # Targetologni bloklash
-def block_targetolog(user_id):
+def block_targetolog(targetolog_id: int):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("UPDATE targetologs SET is_blocked = 1 WHERE user_id = ?", (user_id,))
+    cursor.execute("UPDATE targetologs SET is_blocked = 1 WHERE id = ?", (targetolog_id,))
     conn.commit()
     conn.close()
 
-# Targetologni blokdan chiqarish
-def unblock_targetolog(user_id):
+def unblock_targetolog(targetolog_id: int):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("UPDATE targetologs SET is_blocked = 0 WHERE user_id = ?", (user_id,))
+    cursor.execute("UPDATE targetologs SET is_blocked = 0 WHERE id = ?", (targetolog_id,))
     conn.commit()
     conn.close()
-
-# Targetolog bloklanganligini tekshirish
-def is_targetolog_blocked(user_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT is_blocked FROM targetologs WHERE user_id = ?", (user_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result is not None and result[0] == 1
 
 def get_statistics():
     conn = connect()
