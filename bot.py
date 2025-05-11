@@ -12,7 +12,7 @@ def delete_webhook():
 delete_webhook()  # faqat 1 marta kerak bo‘ladi, keyin bu qatorni o‘chiring yoki izohga oling
 
 import requests
-import other_libraries  # boshqa importlar shu yerda
+
 
 
 
