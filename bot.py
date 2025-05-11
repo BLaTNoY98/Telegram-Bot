@@ -24,7 +24,13 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
+from telegram import Update
+from telegram.ext import ContextTypes
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print(f"Xato yuz berdi: {context.error}")
+    if isinstance(update, Update) and update.message:
+        await update.message.reply_text("Xatolik yuz berdi. Keyinroq urinib ko‘ring.")
 from admin import get_handlers as get_admin_handlers
 from target import get_targetolog_panel_handlers
 from operator_panel import get_operator_panel_handlers
@@ -185,7 +191,7 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     application.add_handler(CallbackQueryHandler(callback_handler))
-
+    application.add_error_handler(error_handler)
     for handler in get_operator_panel_handlers():
         application.add_handler(handler)
 
