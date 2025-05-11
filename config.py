@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 # .env faylni yuklaymiz
-load_dotenv()
+
 
 # Bot token
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
