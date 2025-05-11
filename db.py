@@ -249,4 +249,5 @@ def update_product(product_id, title, description, video, price_operator, price_
     """, (title, description, video, price_operator, price_targetolog, is_active, product_id))
     conn.commit()
 
+if __name__ == "__main__":
     init_db()
