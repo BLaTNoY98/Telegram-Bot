@@ -186,7 +186,7 @@ def update_withdraw_status(withdraw_id, status):
     cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (status, withdraw_id))
     conn.commit()
 
-def get_statistics():
+:
 def get_statistics():
     with sqlite3.connect(DB_NAME) as conn:
         cursor = conn.cursor()
