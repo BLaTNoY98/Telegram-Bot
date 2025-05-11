@@ -87,11 +87,11 @@ def create_tables():
     conn.commit()
     conn.close()
 
-# -------- Lead UID Generator --------
+# Lead UID Generator
 def generate_lead_uid(lead_id):
     return f"L{str(lead_id).zfill(5)}"
 
-# -------- Lead Insert with UID --------
+# Lead Insert with UID
 def insert_lead(name, phone, address, operator_id, targetolog_id, product_id):
     conn = connect()
     cursor = conn.cursor()
@@ -110,7 +110,7 @@ def insert_lead(name, phone, address, operator_id, targetolog_id, product_id):
     conn.close()
     return lead_uid
 
-# -------- Operator Balance Update --------
+# Operator Balance Update
 def update_operator_balance(operator_id, hold_delta=0, main_delta=0):
     conn = connect()
     cursor = conn.cursor()
@@ -122,7 +122,7 @@ def update_operator_balance(operator_id, hold_delta=0, main_delta=0):
     conn.commit()
     conn.close()
 
-# -------- Targetolog Balance Update --------
+# Targetolog Balance Update
 def update_targetolog_balance(targetolog_id, hold_delta=0, main_delta=0):
     conn = connect()
     cursor = conn.cursor()
@@ -134,7 +134,7 @@ def update_targetolog_balance(targetolog_id, hold_delta=0, main_delta=0):
     conn.commit()
     conn.close()
 
-# -------- Lead Count By Period --------
+# Lead Count By Period
 def count_leads_by_targetolog(targetolog_id, period='day'):
     conn = connect()
     cursor = conn.cursor()
@@ -153,12 +153,12 @@ def count_leads_by_targetolog(targetolog_id, period='day'):
         SELECT COUNT(*) FROM leads
         WHERE targetolog_id = ? AND created_at >= ?
     """, (targetolog_id, since))
-    
+
     result = cursor.fetchone()[0]
     conn.close()
     return result
 
-# -------- Lead Status Update --------
+# Lead Status Update
 def update_lead_status(lead_uid, status):
     conn = connect()
     cursor = conn.cursor()
@@ -168,7 +168,7 @@ def update_lead_status(lead_uid, status):
     conn.commit()
     conn.close()
 
-# -------- Get Product Info --------
+# Get Product Info
 def get_product(product_id):
     conn = connect()
     cursor = conn.cursor()
@@ -177,7 +177,7 @@ def get_product(product_id):
     conn.close()
     return product
 
-# -------- Get Operator by tg_id --------
+# Get Operator by tg_id
 def get_operator_by_tg_id(tg_id):
     conn = connect()
     cursor = conn.cursor()
@@ -186,7 +186,7 @@ def get_operator_by_tg_id(tg_id):
     conn.close()
     return user
 
-# -------- Get Targetolog by tg_id --------
+# Get Targetolog by tg_id
 def get_targetolog_by_tg_id(tg_id):
     conn = connect()
     cursor = conn.cursor()
@@ -195,7 +195,7 @@ def get_targetolog_by_tg_id(tg_id):
     conn.close()
     return user
 
-# -------- Check Admin --------
+# Check Admin
 def is_admin(tg_id):
     conn = connect()
     cursor = conn.cursor()
