@@ -9,7 +9,7 @@ def delete_webhook():
     response = requests.get(url)
     print("Webhook delete response:", response.json())
 
-# delete_webhook()  # faqat 1 marta kerak bo‘ladi, keyin bu qatorni o‘chiring yoki izohga oling
+delete_webhook()  # faqat 1 marta kerak bo‘ladi, keyin bu qatorni o‘chiring yoki izohga oling
 
 import requests
 
