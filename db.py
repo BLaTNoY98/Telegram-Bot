@@ -162,17 +162,13 @@ def get_withdrawals(user_id=None):
     else:
         cursor.execute("SELECT * FROM withdrawals")
     return cursor.fetchall()
-def block_operator(operator_id):
-    with sqlite3.connect(DB_NAME) as conn:
-        c = conn.cursor()
-        c.execute("UPDATE operators SET is_blocked = 1 WHERE id = ?", (operator_id,))
-        conn.commit()
+def block_operator(user_id):
+    cursor.execute("UPDATE users SET is_blocked = 1 WHERE user_id = ? AND role = 'operator'", (user_id,))
+    conn.commit()
 
-def unblock_operator(operator_id):
-    with sqlite3.connect(DB_NAME) as conn:
-        c = conn.cursor()
-        c.execute("UPDATE operators SET is_blocked = 0 WHERE id = ?", (operator_id,))
-        conn.commit()
+def unblock_operator(user_id):
+    cursor.execute("UPDATE users SET is_blocked = 0 WHERE user_id = ? AND role = 'operator'", (user_id,))
+    conn.commit()
 
 def unblock_targetolog(user_id):
     cursor.execute("UPDATE users SET is_blocked = 0 WHERE user_id = ? AND role = 'targetolog'", (user_id,))
@@ -186,23 +182,25 @@ def update_withdraw_status(withdraw_id, status):
     cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (status, withdraw_id))
     conn.commit()
     
-    def get_statistics():
-    with sqlite3.connect(DB_NAME) as conn:
-        c = conn.cursor()
-        c.execute("SELECT COUNT(*) FROM leads")
-        total_leads = c.fetchone()[0]
+    def update_withdraw_status(withdraw_id, status):
+    cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (status, withdraw_id))
+    conn.commit()
 
-        c.execute("SELECT COUNT(*) FROM users WHERE role = 'operator'")
-        total_operators = c.fetchone()[0]
+def get_statistics():
+    cursor.execute("SELECT COUNT(*) FROM leads")
+    total_leads = cursor.fetchone()[0]
 
-        c.execute("SELECT COUNT(*) FROM users WHERE role = 'targetolog'")
-        total_targetologs = c.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'operator'")
+    total_operators = cursor.fetchone()[0]
 
-        return {
-            "total_leads": total_leads,
-            "total_operators": total_operators,
-            "total_targetologs": total_targetologs
-        }
+    cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'targetolog'")
+    total_targetologs = cursor.fetchone()[0]
+
+    return {
+        "total_leads": total_leads,
+        "total_operators": total_operators,
+        "total_targetologs": total_targetologs
+    }
     
 
 def add_product(title, description, video, price_operator, price_targetolog):
