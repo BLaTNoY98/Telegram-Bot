@@ -1,13 +1,17 @@
+# db.py
 import sqlite3
 
+# ==== DB ulanish ====
 def connect():
     return sqlite3.connect("data.db")
 
+
+# ==== Dastlabki jadval yaratish ====
 def init_db():
     conn = connect()
     cursor = conn.cursor()
 
-    # Operators
+    # Operatorlar jadvali
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS operators (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,7 +23,7 @@ def init_db():
         );
     """)
 
-    # Targetologlar
+    # Targetologlar jadvali
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS targetologlar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +35,7 @@ def init_db():
         );
     """)
 
-    # Users
+    # Foydalanuvchilar jadvali (faqat telefon uchun)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             telegram_id INTEGER PRIMARY KEY,
@@ -39,7 +43,7 @@ def init_db():
         );
     """)
 
-    # Products (Offers)
+    # Mahsulotlar (offers)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,7 +56,7 @@ def init_db():
         );
     """)
 
-    # Leads
+    # Leadlar
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,7 +75,7 @@ def init_db():
         );
     """)
 
-    # Sales
+    # Savdolar
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sales (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,7 +88,7 @@ def init_db():
         );
     """)
 
-    # Withdrawal Requests
+    # Pul yechish so‘rovlari
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS withdrawals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,31 +102,24 @@ def init_db():
     conn.commit()
     conn.close()
 
-# =================== Role checks ===================
-
+# ==== Ruxsat tekshiruvlari ====
 def is_operator(telegram_id: int) -> bool:
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("SELECT 1 FROM operators WHERE telegram_id = ? AND is_blocked = 0", (telegram_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result is not None
+    return cursor.fetchone() is not None
 
 def is_targetolog(telegram_id: int) -> bool:
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("SELECT 1 FROM targetologlar WHERE telegram_id = ? AND is_blocked = 0", (telegram_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result is not None
+    return cursor.fetchone() is not None
 
 def is_registered(telegram_id: int) -> bool:
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("SELECT 1 FROM users WHERE telegram_id = ?", (telegram_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result is not None
+    return cursor.fetchone() is not None
 
 def register_user(telegram_id: int, phone_number: str):
     conn = connect()
@@ -131,13 +128,11 @@ def register_user(telegram_id: int, phone_number: str):
     conn.commit()
     conn.close()
 
-# =================== Lead ID generator ===================
-
+# ==== Lead ID generator ====
 def generate_lead_uid(lead_id: int) -> str:
     return f"L{str(lead_id).zfill(5)}"
 
-# =================== Admin panel functions ===================
-
+# ==== Admin panel funksiyalari ====
 def add_operator(name, telegram_id):
     conn = connect()
     cursor = conn.cursor()
@@ -182,8 +177,7 @@ def count_leads():
     cursor.execute("SELECT COUNT(*) FROM leads")
     return cursor.fetchone()[0]
 
-# =================== Products ===================
-
+# ==== Mahsulot funksiyalari ====
 def add_product(title, description, video, price_operator, price_targetolog):
     conn = connect()
     cursor = conn.cursor()
@@ -206,8 +200,6 @@ def get_product_by_id(product_id):
     cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
     return cursor.fetchone()
 
-# =================== Qo‘shimcha funksiyalar ===================
-
 def toggle_product_status(product_id, is_active):
     conn = connect()
     cursor = conn.cursor()
@@ -221,13 +213,7 @@ def get_active_products():
     cursor.execute("SELECT * FROM products WHERE is_active = 1")
     return cursor.fetchall()
 
-def update_withdrawal_status(withdrawal_id, new_status):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (new_status, withdrawal_id))
-    conn.commit()
-    conn.close()
-
+# ==== Lead status yangilash ====
 def update_lead_status_and_address(lead_uid, status, address=None):
     conn = connect()
     cursor = conn.cursor()
@@ -238,7 +224,14 @@ def update_lead_status_and_address(lead_uid, status, address=None):
     conn.commit()
     conn.close()
 
-# =================== Admin check ===================
+# ==== Pul yechish holatini yangilash ====
+def update_withdrawal_status(withdrawal_id, new_status):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (new_status, withdrawal_id))
+    conn.commit()
+    conn.close()
 
+# ==== Admin tekshiruvi ====
 def is_admin(telegram_id: int) -> bool:
     return telegram_id in [1471552584]  # Adminlar ro'yxati shu yerda
