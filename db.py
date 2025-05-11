@@ -12,7 +12,7 @@ def init_db():
 def create_tables():
     conn = connect()
     cursor = conn.cursor()
-
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS admins (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -158,6 +158,22 @@ def get_operator_by_tg_id(tg_id):
     conn.close()
     return user
 
+def get_operator_by_id(id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM operators WHERE id = ?", (id,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+def get_targetolog_by_id(id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM targetologs WHERE id = ?", (id,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
 def get_targetolog_by_tg_id(tg_id):
     conn = connect()
     cursor = conn.cursor()
@@ -255,6 +271,24 @@ def get_statistics():
         "week": weekly_leads,
         "month": monthly_leads
     }
+def is_registered(tg_id):
+    conn = connect()
+    cursor = conn.cursor()
+
+    # Check in operators
+    cursor.execute("SELECT 1 FROM operators WHERE tg_id = ?", (tg_id,))
+    if cursor.fetchone():
+        conn.close()
+        return True
+
+    # Check in targetologs
+    cursor.execute("SELECT 1 FROM targetologs WHERE tg_id = ?", (tg_id,))
+    if cursor.fetchone():
+        conn.close()
+        return True
+
+    conn.close()
+    return False
 
 def count_leads_by_targetolog(targetolog_id, period='day'):
     conn = connect()
@@ -278,3 +312,65 @@ def count_leads_by_targetolog(targetolog_id, period='day'):
     result = cursor.fetchone()[0]
     conn.close()
     return result
+
+def add_admin(tg_id, full_name):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO admins (tg_id, full_name) VALUES (?, ?)", (tg_id, full_name))
+    conn.commit()
+    conn.close()
+
+def add_operator(tg_id, full_name, phone_number):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR IGNORE INTO operators (tg_id, full_name, phone_number)
+        VALUES (?, ?, ?)
+    """, (tg_id, full_name, phone_number))
+    conn.commit()
+    conn.close()
+
+def add_targetolog(tg_id, full_name, phone_number, unique_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR IGNORE INTO targetologs (tg_id, full_name, phone_number, unique_id)
+        VALUES (?, ?, ?, ?)
+    """, (tg_id, full_name, phone_number, unique_id))
+    conn.commit()
+    conn.close()
+
+def get_lead_by_uid(lead_uid):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM leads WHERE lead_uid = ?", (lead_uid,))
+    lead = cursor.fetchone()
+    conn.close()
+    return lead
+
+def insert_product(title, description, video_url, price_operator, price_targetolog):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO products (title, description, video_url, price_operator, price_targetolog)
+        VALUES (?, ?, ?, ?, ?)
+    """, (title, description, video_url, price_operator, price_targetolog))
+    conn.commit()
+    conn.close()
+
+def update_product(product_id, title, description, video_url, price_operator, price_targetolog):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE products SET title = ?, description = ?, video_url = ?, price_operator = ?, price_targetolog = ?
+        WHERE id = ?
+    """, (title, description, video_url, price_operator, price_targetolog, product_id))
+    conn.commit()
+    conn.close()
+
+def set_product_enabled(product_id, enabled: bool):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE products SET is_enabled = ? WHERE id = ?", (int(enabled), product_id))
+    conn.commit()
+    conn.close()
