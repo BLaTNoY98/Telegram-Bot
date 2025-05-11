@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv
 
-# .env faylni yuklaymiz
 
+DB_NAME = "data.db"  # Bu yerga haqiqiy bazangizning nomini yozing
 
 # Bot token
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
