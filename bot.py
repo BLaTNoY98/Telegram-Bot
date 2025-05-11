@@ -3,11 +3,6 @@ import os
 import sys
 import requests
 
-
-
-
-
-
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from telegram import (
@@ -26,13 +21,7 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
-from telegram import Update
-from telegram.ext import ContextTypes
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print(f"Xato yuz berdi: {context.error}")
-    if isinstance(update, Update) and update.message:
-        await update.message.reply_text("Xatolik yuz berdi. Keyinroq urinib ko‘ring.")
 from admin import get_handlers as get_admin_handlers
 from target import get_targetolog_panel_handlers
 from operator_panel import get_operator_panel_handlers
@@ -42,12 +31,16 @@ import db
 
 logging.basicConfig(level=logging.INFO)
 
-# DB ni ishga tushuramiz
+# DB ni ishga tushurish
 db.init_db()
 
+# Xatoliklarni ushlovchi
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print(f"Xato yuz berdi: {context.error}")
+    if isinstance(update, Update) and update.message:
+        await update.message.reply_text("Xatolik yuz berdi. Keyinroq urinib ko‘ring.")
 
 # /start komandasi
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
@@ -70,7 +63,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=keyboard
     )
 
-
 # Telefon raqamni qabul qilish
 async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     contact = update.message.contact
@@ -86,7 +78,6 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phone = contact.phone_number
 
     db.register_user(user_id, phone)
-
     await update.message.reply_text("Raqamingiz saqlandi.", reply_markup=ReplyKeyboardRemove())
 
     if db.is_operator(user_id):
@@ -100,7 +91,6 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Raqamingiz saqlandi, ammo hali tasdiqlanmagansiz.")
 
-    # Adminlarga xabar yuborish
     for admin_id in config.ADMIN_IDS:
         keyboard = InlineKeyboardMarkup([
             [
@@ -113,7 +103,6 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=f"Yangi foydalanuvchi ro‘yxatdan o‘tdi:\n\nID: {user_id}\nTelefon: {phone}",
             reply_markup=keyboard
         )
-
 
 # Operator paneli
 async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -132,7 +121,6 @@ async def show_operator_panel(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif update.callback_query:
         await update.callback_query.edit_message_text("Operator paneliga xush kelibsiz:", reply_markup=reply_markup)
 
-
 # Targetolog paneli
 async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -147,13 +135,11 @@ async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TY
     elif update.callback_query:
         await update.callback_query.edit_message_text("Targetolog Paneli:", reply_markup=reply_markup)
 
-
-# Callback tugmalari ishlovchi funksiya
+# Callback tugmalari
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
     await query.answer()
-
     user_id = query.from_user.id
 
     if data.startswith("approve_user:"):
@@ -171,19 +157,11 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if db.is_operator(user_id):
         await query.edit_message_text(f"Operator paneli: {data}")
     elif db.is_targetolog(user_id):
-        if data == "my_leads":
-            await query.edit_message_text("Sizning leadlaringiz hali yo‘q.")
-        elif data == "my_balance":
-            await query.edit_message_text("Sizning balansingiz: 0 so‘m.")
-        elif data == "add_sale":
-            await query.edit_message_text("Sotuv qo‘shish funksiyasi hali mavjud emas.")
-        else:
-            await query.edit_message_text("Noma’lum tugma.")
+        await query.edit_message_text("Targetolog funksiyasi hali ishlamaydi.")
     elif user_id in config.ADMIN_IDS:
         await query.edit_message_text("Admin panelda tugma bosildi.")
     else:
         await query.edit_message_text("Sizda panelga kirish huquqi yo‘q.")
-
 
 # Botni ishga tushurish
 if __name__ == "__main__":
@@ -193,15 +171,14 @@ if __name__ == "__main__":
     application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     application.add_handler(CallbackQueryHandler(callback_handler))
     application.add_error_handler(error_handler)
+
     for handler in get_operator_panel_handlers():
-    application.add_handler(handler)
+        application.add_handler(handler)
 
-for handler in get_targetolog_panel_handlers():
-    application.add_handler(handler)
+    for handler in get_targetolog_panel_handlers():
+        application.add_handler(handler)
 
-for handler in get_admin_handlers():
-    application.add_handler(handler)
+    for handler in get_admin_handlers():
+        application.add_handler(handler)
 
     application.run_polling()
-    
-    
