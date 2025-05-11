@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackContext, CommandHandler, CallbackQueryHandler
+from telegram.ext import CallbackContext, CommandHandler, CallbackQueryHandler, ContextTypes
 from config import ADMIN_IDS  # admin ID ro'yxati
 from db import (get_all_operators, block_operator, unblock_operator,
                 get_statistics, get_all_targetologs, block_targetolog,
