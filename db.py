@@ -6,6 +6,9 @@ DB_NAME = 'bot.db'
 def connect():
     return sqlite3.connect(DB_NAME)
 
+def init_db():
+    create_tables()
+
 def create_tables():
     conn = connect()
     cursor = conn.cursor()
@@ -31,7 +34,7 @@ def create_tables():
     ''')
 
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS targetologlar (
+        CREATE TABLE IF NOT EXISTS targetologs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             tg_id INTEGER UNIQUE,
             full_name TEXT,
@@ -48,10 +51,10 @@ def create_tables():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT,
             description TEXT,
-            video TEXT,
-            price_for_operator INTEGER,
-            price_for_targetolog INTEGER,
-            is_active INTEGER DEFAULT 1
+            video_url TEXT,
+            price_operator INTEGER,
+            price_targetolog INTEGER,
+            is_enabled INTEGER DEFAULT 1
         )
     ''')
 
@@ -68,7 +71,7 @@ def create_tables():
             status TEXT DEFAULT 'new',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (operator_id) REFERENCES operators (id),
-            FOREIGN KEY (targetolog_id) REFERENCES targetologlar (id),
+            FOREIGN KEY (targetolog_id) REFERENCES targetologs (id),
             FOREIGN KEY (product_id) REFERENCES products (id)
         )
     ''')
@@ -80,7 +83,7 @@ def create_tables():
             amount INTEGER,
             status TEXT DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (targetolog_id) REFERENCES targetologlar (id)
+            FOREIGN KEY (targetolog_id) REFERENCES targetologs (id)
         )
     ''')
 
@@ -123,7 +126,7 @@ def update_targetolog_balance(targetolog_id, hold_delta=0, main_delta=0):
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("""
-        UPDATE targetologlar
+        UPDATE targetologs
         SET hold_balance = hold_balance + ?, main_balance = main_balance + ?
         WHERE id = ?
     """, (hold_delta, main_delta, targetolog_id))
@@ -158,7 +161,7 @@ def get_operator_by_tg_id(tg_id):
 def get_targetolog_by_tg_id(tg_id):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM targetologlar WHERE tg_id = ?", (tg_id,))
+    cursor.execute("SELECT * FROM targetologs WHERE tg_id = ?", (tg_id,))
     user = cursor.fetchone()
     conn.close()
     return user
@@ -174,7 +177,7 @@ def get_all_operators():
 def get_all_targetologs():
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, full_name, tg_id, blocked FROM targetologlar")
+    cursor.execute("SELECT id, full_name, tg_id, blocked FROM targetologs")
     result = cursor.fetchall()
     conn.close()
     return result
@@ -201,40 +204,17 @@ def unblock_operator(operator_id: int):
     conn.commit()
     conn.close()
 
-def count_leads_by_targetolog(targetolog_id, period='day'):
-    conn = connect()
-    cursor = conn.cursor()
-
-    now = datetime.now()
-    if period == 'day':
-        since = now - timedelta(days=1)
-    elif period == 'week':
-        since = now - timedelta(weeks=1)
-    elif period == 'month':
-        since = now - timedelta(days=30)
-    else:
-        since = datetime.min
-
-    cursor.execute("""
-        SELECT COUNT(*) FROM leads
-        WHERE targetolog_id = ? AND created_at >= ?
-    """, (targetolog_id, since))
-
-    result = cursor.fetchone()[0]
-    conn.close()
-    return result
-# Targetologni bloklash
 def block_targetolog(targetolog_id: int):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("UPDATE targetologs SET is_blocked = 1 WHERE id = ?", (targetolog_id,))
+    cursor.execute("UPDATE targetologs SET blocked = 1 WHERE id = ?", (targetolog_id,))
     conn.commit()
     conn.close()
 
 def unblock_targetolog(targetolog_id: int):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("UPDATE targetologs SET is_blocked = 0 WHERE id = ?", (targetolog_id,))
+    cursor.execute("UPDATE targetologs SET blocked = 0 WHERE id = ?", (targetolog_id,))
     conn.commit()
     conn.close()
 
@@ -275,3 +255,26 @@ def get_statistics():
         "week": weekly_leads,
         "month": monthly_leads
     }
+
+def count_leads_by_targetolog(targetolog_id, period='day'):
+    conn = connect()
+    cursor = conn.cursor()
+
+    now = datetime.now()
+    if period == 'day':
+        since = now - timedelta(days=1)
+    elif period == 'week':
+        since = now - timedelta(weeks=1)
+    elif period == 'month':
+        since = now - timedelta(days=30)
+    else:
+        since = datetime.min
+
+    cursor.execute("""
+        SELECT COUNT(*) FROM leads
+        WHERE targetolog_id = ? AND created_at >= ?
+    """, (targetolog_id, since))
+
+    result = cursor.fetchone()[0]
+    conn.close()
+    return result
