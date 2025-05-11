@@ -87,11 +87,9 @@ def create_tables():
     conn.commit()
     conn.close()
 
-# Lead UID Generator
 def generate_lead_uid(lead_id):
     return f"L{str(lead_id).zfill(5)}"
 
-# Lead Insert with UID
 def insert_lead(name, phone, address, operator_id, targetolog_id, product_id):
     conn = connect()
     cursor = conn.cursor()
@@ -110,7 +108,6 @@ def insert_lead(name, phone, address, operator_id, targetolog_id, product_id):
     conn.close()
     return lead_uid
 
-# Operator Balance Update
 def update_operator_balance(operator_id, hold_delta=0, main_delta=0):
     conn = connect()
     cursor = conn.cursor()
@@ -122,47 +119,6 @@ def update_operator_balance(operator_id, hold_delta=0, main_delta=0):
     conn.commit()
     conn.close()
 
-
-def get_statistics():
-    conn = sqlite3.connect("your_database4
-    data.db")  # Fayl nomi sizning loyihangizga qarab bo'lishi mumkin
-    cursor = conn.cursor()
-
-    # Bugungi sana
-    today = datetime.now().date()
-    today_str = today.strftime('%Y-%m-%d')
-
-    # Haftaning boshlanishi
-    week_start = (today - timedelta(days=today.weekday())).strftime('%Y-%m-%d')
-
-    # Oy boshlanishi
-    month_start = today.replace(day=1).strftime('%Y-%m-%d')
-
-    # Jami leadlar
-    cursor.execute("SELECT COUNT(*) FROM leads")
-    total_leads = cursor.fetchone()[0]
-
-    # Bugungi leadlar
-    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) = ?", (today_str,))
-    today_leads = cursor.fetchone()[0]
-
-    # Haftalik leadlar
-    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) >= ?", (week_start,))
-    weekly_leads = cursor.fetchone()[0]
-
-    # Oylik leadlar
-    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) >= ?", (month_start,))
-    monthly_leads = cursor.fetchone()[0]
-
-    conn.close()
-
-    return {
-        "total": total_leads,
-        "today": today_leads,
-        "week": weekly_leads,
-        "month": monthly_leads
-    }
-# Targetolog Balance Update
 def update_targetolog_balance(targetolog_id, hold_delta=0, main_delta=0):
     conn = connect()
     cursor = conn.cursor()
@@ -174,7 +130,77 @@ def update_targetolog_balance(targetolog_id, hold_delta=0, main_delta=0):
     conn.commit()
     conn.close()
 
-# Lead Count By Period
+def update_lead_status(lead_uid, status):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE leads SET status = ? WHERE lead_uid = ?
+    """, (status, lead_uid))
+    conn.commit()
+    conn.close()
+
+def get_product(product_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
+    product = cursor.fetchone()
+    conn.close()
+    return product
+
+def get_operator_by_tg_id(tg_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM operators WHERE tg_id = ?", (tg_id,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+def get_targetolog_by_tg_id(tg_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM targetologlar WHERE tg_id = ?", (tg_id,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+def get_all_operators():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, full_name, tg_id, blocked FROM operators")
+    result = cursor.fetchall()
+    conn.close()
+    return result
+
+def get_all_targetologs():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, full_name, tg_id, blocked FROM targetologlar")
+    result = cursor.fetchall()
+    conn.close()
+    return result
+
+def is_admin(tg_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM admins WHERE tg_id = ?", (tg_id,))
+    admin = cursor.fetchone()
+    conn.close()
+    return admin is not None
+
+def block_operator(operator_id: int):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE operators SET blocked = 1 WHERE id = ?", (operator_id,))
+    conn.commit()
+    conn.close()
+
+def unblock_operator(operator_id: int):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE operators SET blocked = 0 WHERE id = ?", (operator_id,))
+    conn.commit()
+    conn.close()
+
 def count_leads_by_targetolog(targetolog_id, period='day'):
     conn = connect()
     cursor = conn.cursor()
@@ -198,75 +224,32 @@ def count_leads_by_targetolog(targetolog_id, period='day'):
     conn.close()
     return result
 
-# Lead Status Update
-def update_lead_status(lead_uid, status):
+def get_statistics():
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE leads SET status = ? WHERE lead_uid = ?
-    """, (status, lead_uid))
-    conn.commit()
+
+    today = datetime.now().date()
+    today_str = today.strftime('%Y-%m-%d')
+    week_start = (today - timedelta(days=today.weekday())).strftime('%Y-%m-%d')
+    month_start = today.replace(day=1).strftime('%Y-%m-%d')
+
+    cursor.execute("SELECT COUNT(*) FROM leads")
+    total_leads = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) = ?", (today_str,))
+    today_leads = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) >= ?", (week_start,))
+    weekly_leads = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) >= ?", (month_start,))
+    monthly_leads = cursor.fetchone()[0]
+
     conn.close()
 
-# Get Product Info
-def get_product(product_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
-    product = cursor.fetchone()
-    conn.close()
-    return product
-
-# Get Operator by tg_id
-def get_operator_by_tg_id(tg_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM operators WHERE tg_id = ?", (tg_id,))
-    user = cursor.fetchone()
-    conn.close()
-    return user
-# operator bloklash
-def block_operator(operator_id: int):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE operators SET blocked = 1 WHERE id = ?", (operator_id,))
-    conn.commit()
-    conn.close()
-
-def unblock_operator(operator_id: int):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE operators SET blocked = 0 WHERE id = ?", (operator_id,))
-    conn.commit()
-    conn.close()
-    
-def get_all_targetologs():
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, phone, is_blocked FROM users WHERE role = 'targetolog'")
-    result = cursor.fetchall()
-    conn.close()
-    return result
-# Get Targetolog by tg_id
-def get_targetolog_by_tg_id(tg_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM targetologlar WHERE tg_id = ?", (tg_id,))
-    user = cursor.fetchone()
-    conn.close()
-    return user
-def get_all_operators():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, full_name, tg_id, blocked FROM operators")
-    result = cursor.fetchall()
-    conn.close()
-    return result
-# Check Admin
-def is_admin(tg_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM admins WHERE tg_id = ?", (tg_id,))
-    admin = cursor.fetchone()
-    conn.close()
-    return admin is not None
+    return {
+        "total": total_leads,
+        "today": today_leads,
+        "week": weekly_leads,
+        "month": monthly_leads
+    }
