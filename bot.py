@@ -10,7 +10,7 @@ def delete_webhook():
     response = requests.get(url)
     print("Webhook delete response:", response.json())
 
-delete_webhook()  # faqat vaqtincha chaqiriladi
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from telegram import (
@@ -182,7 +182,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # Botni ishga tushurish
-
+    if __name__ == "__main__":
+        delete_webhook()  # faqat vaqtincha chaqiriladi   
     application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
@@ -193,5 +194,5 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     application.add_handlers(get_targetolog_panel_handlers())
     application.add_handlers(get_admin_handlers())
 
-    if __name__ == "__main__":
+    
         application.run_polling()
