@@ -187,17 +187,16 @@ def get_operator_by_tg_id(tg_id):
     return user
 # operator bloklash
 def block_operator(operator_id: int):
-    # Bu yerda operatorni bloklash uchun kod bo'lishi kerak, masalan:
-    conn = sqlite3.connect("your_database.db")
+    conn = connect()
     cursor = conn.cursor()
-    cursor.execute("UPDATE operators SET is_blocked = 1 WHERE id = ?", (operator_id,))
+    cursor.execute("UPDATE operators SET blocked = 1 WHERE id = ?", (operator_id,))
     conn.commit()
     conn.close()
-    #unblokc operator
+
 def unblock_operator(operator_id: int):
-    conn = sqlite3.connect("your_database.db")
+    conn = connect()
     cursor = conn.cursor()
-    cursor.execute("UPDATE operators SET is_blocked = 0 WHERE id = ?", (operator_id,))
+    cursor.execute("UPDATE operators SET blocked = 0 WHERE id = ?", (operator_id,))
     conn.commit()
     conn.close()
 # Get Targetolog by tg_id
