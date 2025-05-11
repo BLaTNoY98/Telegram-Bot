@@ -228,3 +228,10 @@ def update_product(product_id, title, description, video, price_operator, price_
         WHERE id = ?
     """, (title, description, video, price_operator, price_targetolog, is_active, product_id))
     conn.commit()
+def init_db():
+    cursor.execute("""CREATE TABLE IF NOT EXISTS users (...)""")
+    ...
+    conn.commit()
+
+# Hammasi tugaganidan keyin eng pastga qo‘shing:
+init_db()
