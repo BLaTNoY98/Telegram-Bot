@@ -122,6 +122,45 @@ def update_operator_balance(operator_id, hold_delta=0, main_delta=0):
     conn.commit()
     conn.close()
 
+
+def get_statistics():
+    conn = sqlite3.connect("your_database.db")  # Fayl nomi sizning loyihangizga qarab bo'lishi mumkin
+    cursor = conn.cursor()
+
+    # Bugungi sana
+    today = datetime.now().date()
+    today_str = today.strftime('%Y-%m-%d')
+
+    # Haftaning boshlanishi
+    week_start = (today - timedelta(days=today.weekday())).strftime('%Y-%m-%d')
+
+    # Oy boshlanishi
+    month_start = today.replace(day=1).strftime('%Y-%m-%d')
+
+    # Jami leadlar
+    cursor.execute("SELECT COUNT(*) FROM leads")
+    total_leads = cursor.fetchone()[0]
+
+    # Bugungi leadlar
+    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) = ?", (today_str,))
+    today_leads = cursor.fetchone()[0]
+
+    # Haftalik leadlar
+    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) >= ?", (week_start,))
+    weekly_leads = cursor.fetchone()[0]
+
+    # Oylik leadlar
+    cursor.execute("SELECT COUNT(*) FROM leads WHERE DATE(created_at) >= ?", (month_start,))
+    monthly_leads = cursor.fetchone()[0]
+
+    conn.close()
+
+    return {
+        "total": total_leads,
+        "today": today_leads,
+        "week": weekly_leads,
+        "month": monthly_leads
+    }
 # Targetolog Balance Update
 def update_targetolog_balance(targetolog_id, hold_delta=0, main_delta=0):
     conn = connect()
