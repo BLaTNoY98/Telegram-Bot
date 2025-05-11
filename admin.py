@@ -112,3 +112,4 @@ admin_handlers = [
     CallbackQueryHandler(admin_callback_handler, pattern="^admin_"),
     CallbackQueryHandler(admin_callback_handler, pattern="^(blockop_|blocktg_|add_product)$"),
     ]
+get_handlers = get_admin_handlers
