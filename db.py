@@ -195,8 +195,12 @@ def get_targetolog_by_tg_id(tg_id):
     conn.close()
     return user
 def get_all_operators():
-    cursor.execute("SELECT id, name, tg_id, is_blocked FROM operators")
-    return cursor.fetchall()
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, full_name, tg_id, blocked FROM operators")
+    result = cursor.fetchall()
+    conn.close()
+    return result
 # Check Admin
 def is_admin(tg_id):
     conn = connect()
