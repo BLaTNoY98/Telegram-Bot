@@ -1,20 +1,17 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    ContextTypes,
-    CommandHandler,
-    CallbackQueryHandler,
-    ConversationHandler,
-    MessageHandler,
-    filters
+    ContextTypes, CommandHandler, CallbackQueryHandler,
+    ConversationHandler, MessageHandler, filters
 )
 import db
 
-ADMINS = [1471552584]
+ADMINS = [1471552584]  # Sizning admin ID'ingiz
 
 # Bosqichlar
 ADD_OPERATOR_NAME, ADD_OPERATOR_ID = range(2)
 ADD_TARGETOLOG_NAME, ADD_TARGETOLOG_ID = range(2, 4)
 ADD_PRODUCT_TITLE, ADD_PRODUCT_DESC, ADD_PRODUCT_VIDEO, ADD_PRODUCT_PRICE_OP, ADD_PRODUCT_PRICE_TG = range(4, 9)
+ADD_ADMIN_ID = 9
 
 operator_temp_data = {}
 targetolog_temp_data = {}
@@ -31,12 +28,15 @@ async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     keyboard = [
-        [InlineKeyboardButton("Operator qo‘shish", callback_data="add_operator")],
-        [InlineKeyboardButton("Targetolog qo‘shish", callback_data="add_targetolog")],
-        [InlineKeyboardButton("Operatorlar ro‘yxati", callback_data="list_operators")],
-        [InlineKeyboardButton("Targetologlar ro‘yxati", callback_data="list_targetologs")],
-        [InlineKeyboardButton("Statistika", callback_data="show_stats")],
-        [InlineKeyboardButton("Mahsulot qo‘shish", callback_data="add_product")],
+        [InlineKeyboardButton("➕ Operator qo‘shish", callback_data="add_operator")],
+        [InlineKeyboardButton("➕ Targetolog qo‘shish", callback_data="add_targetolog")],
+        [InlineKeyboardButton("📋 Operatorlar ro‘yxati", callback_data="list_operators")],
+        [InlineKeyboardButton("📋 Targetologlar ro‘yxati", callback_data="list_targetologs")],
+        [InlineKeyboardButton("📈 Statistika", callback_data="show_stats")],
+        [InlineKeyboardButton("🛒 Mahsulot qo‘shish", callback_data="add_product")],
+        [InlineKeyboardButton("💰 Balanslar", callback_data="balances")],
+        [InlineKeyboardButton("📤 Pul chiqarish so‘rovlari", callback_data="withdrawals")],
+        [InlineKeyboardButton("👤 Admin qo‘shish", callback_data="add_admin")],
     ]
     await update.message.reply_text("Admin paneliga xush kelibsiz:", reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -68,10 +68,10 @@ async def admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "show_stats":
         msg = (
-            f"Statistika:\n"
-            f"Operatorlar: {db.count_operators()}\n"
-            f"Targetologlar: {db.count_targetologs()}\n"
-            f"Leadlar: {db.count_leads()}"
+            f"📊 Statistika:\n"
+            f"👷 Operatorlar: {db.count_operators()}\n"
+            f"🎯 Targetologlar: {db.count_targetologs()}\n"
+            f"📥 Leadlar: {db.count_leads()}"
         )
         await query.message.reply_text(msg)
         return ConversationHandler.END
@@ -79,6 +79,20 @@ async def admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "add_product":
         await query.message.reply_text("Mahsulot nomini yuboring:")
         return ADD_PRODUCT_TITLE
+
+    if data == "balances":
+        msg = db.get_balances_summary()
+        await query.message.reply_text(msg)
+        return ConversationHandler.END
+
+    if data == "withdrawals":
+        msg = db.get_pending_withdrawals()
+        await query.message.reply_text(msg)
+        return ConversationHandler.END
+
+    if data == "add_admin":
+        await query.message.reply_text("Yangi adminning Telegram ID sini yuboring:")
+        return ADD_ADMIN_ID
 
 # Operator qo‘shish
 async def add_operator_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -92,8 +106,6 @@ async def add_operator_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name = operator_temp_data["name"]
         db.add_operator(name, telegram_id)
         await update.message.reply_text("✅ Operator qo‘shildi.")
-    except ValueError:
-        await update.message.reply_text("❌ ID raqam bo‘lishi kerak.")
     except Exception as e:
         await update.message.reply_text(f"Xatolik: {e}")
     return ConversationHandler.END
@@ -110,8 +122,6 @@ async def add_targetolog_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name = targetolog_temp_data["name"]
         db.add_targetolog(name, telegram_id)
         await update.message.reply_text("✅ Targetolog qo‘shildi.")
-    except ValueError:
-        await update.message.reply_text("❌ ID raqam bo‘lishi kerak.")
     except Exception as e:
         await update.message.reply_text(f"Xatolik: {e}")
     return ConversationHandler.END
@@ -138,7 +148,7 @@ async def add_product_price_op(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text("Targetolog uchun narxni yuboring:")
         return ADD_PRODUCT_PRICE_TG
     except ValueError:
-        await update.message.reply_text("Narx noto‘g‘ri. Iltimos, son kiriting.")
+        await update.message.reply_text("Iltimos, son kiriting.")
         return ADD_PRODUCT_PRICE_OP
 
 async def add_product_price_tg(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -151,11 +161,22 @@ async def add_product_price_tg(update: Update, context: ContextTypes.DEFAULT_TYP
             product_temp_data["price_operator"],
             product_temp_data["price_targetolog"]
         )
-        await update.message.reply_text("✅ Mahsulot muvaffaqiyatli qo‘shildi.")
-    except ValueError:
-        await update.message.reply_text("Narx noto‘g‘ri. Iltimos, son kiriting.")
+        await update.message.reply_text("✅ Mahsulot qo‘shildi.")
     except Exception as e:
         await update.message.reply_text(f"Xatolik: {e}")
+    return ConversationHandler.END
+
+# Yangi admin qo‘shish
+async def add_admin_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        new_admin_id = int(update.message.text)
+        if new_admin_id not in ADMINS:
+            ADMINS.append(new_admin_id)
+            await update.message.reply_text("✅ Yangi admin qo‘shildi.")
+        else:
+            await update.message.reply_text("Bu foydalanuvchi allaqachon admin.")
+    except ValueError:
+        await update.message.reply_text("ID raqami noto‘g‘ri.")
     return ConversationHandler.END
 
 # Handlerlar
@@ -164,7 +185,7 @@ def get_handlers():
         CommandHandler("admin", admin_start),
         ConversationHandler(
             entry_points=[
-                CallbackQueryHandler(admin_buttons, pattern="add_operator|add_targetolog|list_operators|list_targetologs|show_stats|add_product")
+                CallbackQueryHandler(admin_buttons, pattern="add_operator|add_targetolog|list_operators|list_targetologs|show_stats|add_product|balances|withdrawals|add_admin")
             ],
             states={
                 ADD_OPERATOR_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_operator_name)],
@@ -176,6 +197,7 @@ def get_handlers():
                 ADD_PRODUCT_VIDEO: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_product_video)],
                 ADD_PRODUCT_PRICE_OP: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_product_price_op)],
                 ADD_PRODUCT_PRICE_TG: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_product_price_tg)],
+                ADD_ADMIN_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_admin_id)],
             },
             fallbacks=[],
             per_message=True
