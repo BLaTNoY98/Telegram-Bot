@@ -124,7 +124,8 @@ def update_operator_balance(operator_id, hold_delta=0, main_delta=0):
 
 
 def get_statistics():
-    conn = sqlite3.connect("your_database.db")  # Fayl nomi sizning loyihangizga qarab bo'lishi mumkin
+    conn = sqlite3.connect("your_database4
+    data.db")  # Fayl nomi sizning loyihangizga qarab bo'lishi mumkin
     cursor = conn.cursor()
 
     # Bugungi sana
