@@ -186,26 +186,17 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # Botni ishga tushurish
-if __name__ == '__main__':
-    application = (
-    ApplicationBuilder()
-    .token(config.TELEGRAM_TOKEN)
-    .read_timeout(20)
-    .connect_timeout(20)
-    .build()
-    )
+if __name__ == "__main__":
+    application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     application.add_handler(CallbackQueryHandler(callback_handler))
     application.add_error_handler(error_handler)
-    for handler in get_operator_panel_handlers():
-        application.add_handler(handler)
-
-    for handler in get_targetolog_panel_handlers():
-        application.add_handler(handler)
-
-    for handler in get_admin_handlers():
-        application.add_handler(handler)
+    application.add_handlers(get_operator_panel_handlers())
+    application.add_handlers(get_targetolog_panel_handlers())
+    application.add_handlers(get_admin_handlers())
 
     application.run_polling()
+    
+    
