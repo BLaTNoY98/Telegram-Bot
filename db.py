@@ -238,6 +238,14 @@ def unblock_targetolog(targetolog_id: int):
     conn.commit()
     conn.close()
 
+def get_all_products():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, title, description, video_url, price_targetolog, price_operator, is_enabled FROM products")
+    products = cursor.fetchall()
+    conn.close()
+    return products
+
 def get_statistics():
     conn = connect()
     cursor = conn.cursor()
