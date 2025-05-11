@@ -89,6 +89,6 @@ async def handle_target_buttons(update: Update, context: ContextTypes.DEFAULT_TY
 # Asosiy handler ro‘yxati
 def get_targetolog_panel_handlers():
     return [
-        CommandHandler("start", target_start),
+        # CommandHandler("start", target_start),
         CallbackQueryHandler(handle_target_buttons, pattern="^(my_orders|leads_.*|my_balance|withdraw_request|my_stats|back_to_panel)$")
     ]
