@@ -8,6 +8,5 @@ from dotenv import load_dotenv
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 # Adminlar ro'yxati (int ko'rinishida)
-ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "").split(",")))
-
+ADMIN_IDS = [int(i) for i in os.getenv("ADMIN_IDS", "").split(",") if i.strip().isdigit()]
 # Boshqa sozlamalar bo'lsa, shu yerga qo'shish mumkin
