@@ -162,6 +162,24 @@ def get_withdrawals(user_id=None):
     else:
         cursor.execute("SELECT * FROM withdrawals")
     return cursor.fetchall()
+def block_operator(operator_id):
+    with sqlite3.connect(DB_NAME) as conn:
+        c = conn.cursor()
+        c.execute("UPDATE operators SET is_blocked = 1 WHERE id = ?", (operator_id,))
+        conn.commit()
+
+def unblock_operator(operator_id):
+    with sqlite3.connect(DB_NAME) as conn:
+        c = conn.cursor()
+        c.execute("UPDATE operators SET is_blocked = 0 WHERE id = ?", (operator_id,))
+        conn.commit()
+
+def block_targetolog(user_id):
+    cursor.execute("UPDATE users SET is_blocked = 1 WHERE user_id = ? AND role = 'targetolog'", (user_id,))
+    conn.commit()
+    def unblock_targetolog(user_id):
+    cursor.execute("UPDATE users SET is_blocked = 0 WHERE user_id = ? AND role = 'targetolog'", (user_id,))
+    conn.commit()
 
 def update_withdraw_status(withdraw_id, status):
     cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (status, withdraw_id))
