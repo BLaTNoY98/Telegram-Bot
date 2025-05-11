@@ -1,7 +1,16 @@
 import logging
 import os
 import sys
+import requests
 
+# Webhookni o‘chirish faqat 1 marta kerak bo‘ladi
+def delete_webhook():
+    BOT_TOKEN = "8079107774:AAE5gujyjgvY89EShQJ7fP3gtf-QtVzdB6Q"  # tokeningizni yozing
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook"
+    response = requests.get(url)
+    print("Webhook delete response:", response.json())
+
+delete_webhook()  # faqat vaqtincha chaqiriladi
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from telegram import (
