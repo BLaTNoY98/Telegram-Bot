@@ -19,6 +19,17 @@ def admin_panel(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text("Admin paneliga xush kelibsiz!", reply_markup=reply_markup)
 
+
+
+# Admin komandasi uchun handler
+async def start_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Admin paneliga xush kelibsiz!")
+
+# Handlerlarni qaytaruvchi funksiya
+def get_admin_handlers():
+    return [
+        CommandHandler("admin", start_admin)
+    ]
 def admin_callback_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
