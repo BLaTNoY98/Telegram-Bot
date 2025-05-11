@@ -9,7 +9,7 @@ def delete_webhook():
     response = requests.get(url)
     print("Webhook delete response:", response.json())
 
-# delete_webhook()  # faqat 1 marta kerak bo‘ladi, keyin bu qatorni o‘chiring yoki izohga oling
+ delete_webhook()  # faqat 1 marta kerak bo‘ladi, keyin bu qatorni o‘chiring yoki izohga oling
 
 import requests
 
@@ -195,8 +195,13 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Botni ishga tushurish
 if __name__ == '__main__':
-    
-    application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
+    application = (
+    ApplicationBuilder()
+    .token(config.TELEGRAM_TOKEN)
+    .read_timeout(20)
+    .connect_timeout(20)
+    .build()
+    )
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
