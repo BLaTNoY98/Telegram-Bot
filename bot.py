@@ -39,8 +39,7 @@ db.init_db()
 
 
 # /start komandasi
-print("Start komandasi chaqirildi")
-logging.info("Start komandasi chaqirildi")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
