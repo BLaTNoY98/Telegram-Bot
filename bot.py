@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 
-# Joriy katalogni sys.path ga qo‘shamiz
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from telegram import (
@@ -10,7 +9,8 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     KeyboardButton,
-    ReplyKeyboardMarkup
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove
 )
 from telegram.ext import (
     ApplicationBuilder,
@@ -39,7 +39,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if db.is_registered(user_id):
-        if user_id in config.ADMIN_IDS:  # ADMIN TEKSHIRISH QO‘SHILDI
+        if user_id in config.ADMIN_IDS:
             await update.message.reply_text("Admin paneliga xush kelibsiz.")
         elif db.is_operator(user_id):
             await show_operator_panel(update, context)
@@ -49,7 +49,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Siz hali tasdiqlanmagansiz.")
         return
 
-    # Agar foydalanuvchi hali ro‘yxatdan o‘tmagan bo‘lsa
     contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
     keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
 
@@ -71,9 +70,11 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     user_id = update.effective_user.id
+    phone = contact.phone_number
 
-    # Raqamni DBga saqlaymiz
-    db.register_user(user_id, contact.phone_number)
+    db.register_user(user_id, phone)
+
+    await update.message.reply_text("Raqamingiz saqlandi.", reply_markup=ReplyKeyboardRemove())
 
     if db.is_operator(user_id):
         await update.message.reply_text("Operator sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
@@ -83,9 +84,22 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_targetolog_panel(update, context)
     elif user_id in config.ADMIN_IDS:
         await update.message.reply_text("Admin sifatida ro‘yxatdan o‘tdingiz. Panel yuklanmoqda...")
-        # Agar kerak bo‘lsa, admin panelni shu yerda ochishingiz mumkin
     else:
         await update.message.reply_text("Raqamingiz saqlandi, ammo hali tasdiqlanmagansiz.")
+
+    # Adminlarga xabar yuborish
+    for admin_id in config.ADMIN_IDS:
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"approve_user:{user_id}"),
+                InlineKeyboardButton("❌ Rad etish", callback_data=f"reject_user:{user_id}")
+            ]
+        ])
+        await context.bot.send_message(
+            chat_id=admin_id,
+            text=f"Yangi foydalanuvchi ro‘yxatdan o‘tdi:\n\nID: {user_id}\nTelefon: {phone}",
+            reply_markup=keyboard
+        )
 
 
 # Operator paneli
@@ -128,6 +142,19 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     user_id = query.from_user.id
+
+    if data.startswith("approve_user:"):
+        new_user_id = int(data.split(":")[1])
+        db.approve_user(new_user_id)
+        await query.edit_message_text(f"✅ Foydalanuvchi {new_user_id} tasdiqlandi.")
+        return
+
+    if data.startswith("reject_user:"):
+        new_user_id = int(data.split(":")[1])
+        db.reject_user(new_user_id)
+        await query.edit_message_text(f"❌ Foydalanuvchi {new_user_id} rad etildi.")
+        return
+
     if db.is_operator(user_id):
         await query.edit_message_text(f"Operator paneli: {data}")
     elif db.is_targetolog(user_id):
@@ -153,7 +180,6 @@ if __name__ == "__main__":
     application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     application.add_handler(CallbackQueryHandler(callback_handler))
 
-    # Modul handlerlarini qo‘shamiz
     application.add_handlers(get_operator_panel_handlers())
     application.add_handlers(get_targetolog_panel_handlers())
     application.add_handlers(get_admin_handlers())
