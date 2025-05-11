@@ -185,7 +185,10 @@ def get_operator_by_tg_id(tg_id):
     user = cursor.fetchone()
     conn.close()
     return user
-
+# operator bloklash
+def block_operator(operator_id: int):
+    # Bu yerda operatorni bloklash bo‘yicha kod bo‘lishi kerak
+    pass
 # Get Targetolog by tg_id
 def get_targetolog_by_tg_id(tg_id):
     conn = connect()
