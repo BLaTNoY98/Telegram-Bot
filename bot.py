@@ -183,7 +183,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Botni ishga tushurish
     if __name__ == "__main__":
-        delete_webhook()  # faqat vaqtincha chaqiriladi   
+    delete_webhook()
     application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
@@ -194,5 +194,4 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     application.add_handlers(get_targetolog_panel_handlers())
     application.add_handlers(get_admin_handlers())
 
-    
     application.run_polling()
