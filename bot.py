@@ -181,12 +181,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
         application = ApplicationBuilder().token(config.TELEGRAM_TOKEN).build()
 
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
-        application.add_handler(CallbackQueryHandler(callback_handler))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
+    application.add_handler(CallbackQueryHandler(callback_handler))
 
-        application.add_handlers(get_operator_panel_handlers())
-        application.add_handlers(get_targetolog_panel_handlers())
-        application.add_handlers(get_admin_handlers())
+    application.add_handlers(get_operator_panel_handlers())
+    application.add_handlers(get_targetolog_panel_handlers())
+    application.add_handlers(get_admin_handlers())
 
         application.run_polling()
