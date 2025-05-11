@@ -239,6 +239,14 @@ def unblock_operator(operator_id: int):
     cursor.execute("UPDATE operators SET blocked = 0 WHERE id = ?", (operator_id,))
     conn.commit()
     conn.close()
+    
+def get_all_targetologs():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, phone, is_blocked FROM users WHERE role = 'targetolog'")
+    result = cursor.fetchall()
+    conn.close()
+    return result
 # Get Targetolog by tg_id
 def get_targetolog_by_tg_id(tg_id):
     conn = connect()
