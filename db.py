@@ -1,264 +1,205 @@
 import sqlite3
+from datetime import datetime, timedelta
 
-# ==== DB ulanish ====
+DB_NAME = 'bot.db'
+
 def connect():
-    return sqlite3.connect("data.db")
+    return sqlite3.connect(DB_NAME)
 
-# ==== Dastlabki jadval yaratish ====
-def init_db():
+def create_tables():
     conn = connect()
     cursor = conn.cursor()
 
-    # Operatorlar jadvali
-    cursor.execute("""
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tg_id INTEGER UNIQUE,
+            full_name TEXT
+        )
+    ''')
+
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS operators (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            telegram_id INTEGER UNIQUE,
-            name TEXT,
-            hold_balance REAL DEFAULT 0,
-            main_balance REAL DEFAULT 0,
-            is_blocked INTEGER DEFAULT 0
-        );
-    """)
+            tg_id INTEGER UNIQUE,
+            full_name TEXT,
+            phone_number TEXT,
+            hold_balance INTEGER DEFAULT 0,
+            main_balance INTEGER DEFAULT 0,
+            blocked INTEGER DEFAULT 0
+        )
+    ''')
 
-    # Targetologlar jadvali
-    cursor.execute("""
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS targetologlar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            telegram_id INTEGER UNIQUE,
-            name TEXT,
-            hold_balance REAL DEFAULT 0,
-            main_balance REAL DEFAULT 0,
-            is_blocked INTEGER DEFAULT 0
-        );
-    """)
+            tg_id INTEGER UNIQUE,
+            full_name TEXT,
+            phone_number TEXT,
+            unique_id TEXT UNIQUE,
+            hold_balance INTEGER DEFAULT 0,
+            main_balance INTEGER DEFAULT 0,
+            blocked INTEGER DEFAULT 0
+        )
+    ''')
 
-    # Foydalanuvchilar jadvali
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            telegram_id INTEGER PRIMARY KEY,
-            phone_number TEXT
-        );
-    """)
-
-    # Mahsulotlar (offers)
-    cursor.execute("""
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT,
             description TEXT,
             video TEXT,
-            price_targetolog REAL,
-            price_operator REAL,
+            price_for_operator INTEGER,
+            price_for_targetolog INTEGER,
             is_active INTEGER DEFAULT 1
-        );
-    """)
+        )
+    ''')
 
-    # Leadlar
-    cursor.execute("""
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             lead_uid TEXT UNIQUE,
             name TEXT,
             phone TEXT,
             address TEXT,
-            status TEXT DEFAULT 'new',
             operator_id INTEGER,
             targetolog_id INTEGER,
             product_id INTEGER,
+            status TEXT DEFAULT 'new',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(operator_id) REFERENCES operators(id),
-            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id),
-            FOREIGN KEY(product_id) REFERENCES products(id)
-        );
-    """)
+            FOREIGN KEY (operator_id) REFERENCES operators (id),
+            FOREIGN KEY (targetolog_id) REFERENCES targetologlar (id),
+            FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+    ''')
 
-    # Savdolar
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS sales (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            targetolog_id INTEGER,
-            lead_id INTEGER,
-            amount REAL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(targetolog_id) REFERENCES targetologlar(id),
-            FOREIGN KEY(lead_id) REFERENCES leads(id)
-        );
-    """)
-
-    # Pul yechish so‘rovlari
-    cursor.execute("""
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS withdrawals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             targetolog_id INTEGER,
-            amount REAL,
+            amount INTEGER,
             status TEXT DEFAULT 'pending',
-            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (targetolog_id) REFERENCES targetologlar (id)
+        )
+    ''')
 
     conn.commit()
     conn.close()
 
-# ==== Ruxsat tekshiruvlari ====
-def is_operator(telegram_id: int) -> bool:
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM operators WHERE telegram_id = ? AND is_blocked = 0", (telegram_id,))
-    return cursor.fetchone() is not None
-
-def is_targetolog(telegram_id: int) -> bool:
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM targetologlar WHERE telegram_id = ? AND is_blocked = 0", (telegram_id,))
-    return cursor.fetchone() is not None
-
-def is_registered(telegram_id: int) -> bool:
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM users WHERE telegram_id = ?", (telegram_id,))
-    return cursor.fetchone() is not None
-
-def register_user(telegram_id: int, phone_number: str):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR IGNORE INTO users (telegram_id, phone_number) VALUES (?, ?)", (telegram_id, phone_number))
-    conn.commit()
-    conn.close()
-
-# ==== Lead ID generator ====
-def generate_lead_uid(lead_id: int) -> str:
+# -------- Lead UID Generator --------
+def generate_lead_uid(lead_id):
     return f"L{str(lead_id).zfill(5)}"
 
-# ==== Admin panel funksiyalari ====
-def add_operator(name, telegram_id):
+# -------- Lead Insert with UID --------
+def insert_lead(name, phone, address, operator_id, targetolog_id, product_id):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("INSERT OR IGNORE INTO operators (name, telegram_id) VALUES (?, ?)", (name, telegram_id))
+
+    cursor.execute("""
+        INSERT INTO leads (name, phone, address, operator_id, targetolog_id, product_id)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (name, phone, address, operator_id, targetolog_id, product_id))
+
+    lead_id = cursor.lastrowid
+    lead_uid = generate_lead_uid(lead_id)
+
+    cursor.execute("UPDATE leads SET lead_uid = ? WHERE id = ?", (lead_uid, lead_id))
+
     conn.commit()
     conn.close()
+    return lead_uid
 
-def get_all_operators():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, telegram_id, is_blocked FROM operators")
-    return cursor.fetchall()
-
-def add_targetolog(name, telegram_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR IGNORE INTO targetologlar (name, telegram_id) VALUES (?, ?)", (name, telegram_id))
-    conn.commit()
-    conn.close()
-
-def get_all_targetologs():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, telegram_id, is_blocked FROM targetologlar")
-    return cursor.fetchall()
-
-def count_operators():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM operators")
-    return cursor.fetchone()[0]
-
-def count_targetologs():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM targetologlar")
-    return cursor.fetchone()[0]
-
-def count_leads():
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM leads")
-    return cursor.fetchone()[0]
-
-# ==== Mahsulot funksiyalari ====
-def add_product(title, description, video, price_operator, price_targetolog):
+# -------- Operator Balance Update --------
+def update_operator_balance(operator_id, hold_delta=0, main_delta=0):
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO products (title, description, video, price_operator, price_targetolog)
-        VALUES (?, ?, ?, ?, ?)
-    """, (title, description, video, price_operator, price_targetolog))
+        UPDATE operators
+        SET hold_balance = hold_balance + ?, main_balance = main_balance + ?
+        WHERE id = ?
+    """, (hold_delta, main_delta, operator_id))
     conn.commit()
     conn.close()
 
-def get_all_products():
+# -------- Targetolog Balance Update --------
+def update_targetolog_balance(targetolog_id, hold_delta=0, main_delta=0):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, title, description, video, price_operator, price_targetolog, is_active FROM products")
-    return cursor.fetchall()
+    cursor.execute("""
+        UPDATE targetologlar
+        SET hold_balance = hold_balance + ?, main_balance = main_balance + ?
+        WHERE id = ?
+    """, (hold_delta, main_delta, targetolog_id))
+    conn.commit()
+    conn.close()
 
-def get_product_by_id(product_id):
+# -------- Lead Count By Period --------
+def count_leads_by_targetolog(targetolog_id, period='day'):
+    conn = connect()
+    cursor = conn.cursor()
+
+    now = datetime.now()
+    if period == 'day':
+        since = now - timedelta(days=1)
+    elif period == 'week':
+        since = now - timedelta(weeks=1)
+    elif period == 'month':
+        since = now - timedelta(days=30)
+    else:
+        since = datetime.min
+
+    cursor.execute("""
+        SELECT COUNT(*) FROM leads
+        WHERE targetolog_id = ? AND created_at >= ?
+    """, (targetolog_id, since))
+    
+    result = cursor.fetchone()[0]
+    conn.close()
+    return result
+
+# -------- Lead Status Update --------
+def update_lead_status(lead_uid, status):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE leads SET status = ? WHERE lead_uid = ?
+    """, (status, lead_uid))
+    conn.commit()
+    conn.close()
+
+# -------- Get Product Info --------
+def get_product(product_id):
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
-    return cursor.fetchone()
-
-def toggle_product_status(product_id, is_active):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE products SET is_active = ? WHERE id = ?", (is_active, product_id))
-    conn.commit()
+    product = cursor.fetchone()
     conn.close()
+    return product
 
-def get_active_products():
+# -------- Get Operator by tg_id --------
+def get_operator_by_tg_id(tg_id):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM products WHERE is_active = 1")
-    return cursor.fetchall()
-
-# ==== Lead status yangilash ====
-def update_lead_status_and_address(lead_uid, status, address=None):
-    conn = connect()
-    cursor = conn.cursor()
-    if address:
-        cursor.execute("UPDATE leads SET status = ?, address = ? WHERE lead_uid = ?", (status, address, lead_uid))
-    else:
-        cursor.execute("UPDATE leads SET status = ? WHERE lead_uid = ?", (status, lead_uid))
-    conn.commit()
+    cursor.execute("SELECT * FROM operators WHERE tg_id = ?", (tg_id,))
+    user = cursor.fetchone()
     conn.close()
+    return user
 
-# ==== Pul yechish holatini yangilash ====
-def update_withdrawal_status(withdrawal_id, new_status):
+# -------- Get Targetolog by tg_id --------
+def get_targetolog_by_tg_id(tg_id):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (new_status, withdrawal_id))
-    conn.commit()
+    cursor.execute("SELECT * FROM targetologlar WHERE tg_id = ?", (tg_id,))
+    user = cursor.fetchone()
     conn.close()
+    return user
 
-# ==== Admin tekshiruvi ====
-def is_admin(telegram_id: int) -> bool:
-    return telegram_id in [1471552584]
-
-# ==== Operator va Targetolog bloklash ====
-def block_operator(operator_id):
+# -------- Check Admin --------
+def is_admin(tg_id):
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("UPDATE operators SET is_blocked = 1 WHERE id = ?", (operator_id,))
-    conn.commit()
+    cursor.execute("SELECT * FROM admins WHERE tg_id = ?", (tg_id,))
+    admin = cursor.fetchone()
     conn.close()
-
-def unblock_operator(operator_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE operators SET is_blocked = 0 WHERE id = ?", (operator_id,))
-    conn.commit()
-    conn.close()
-
-def block_targetolog(targetolog_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE targetologlar SET is_blocked = 1 WHERE id = ?", (targetolog_id,))
-    conn.commit()
-    conn.close()
-
-def unblock_targetolog(targetolog_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE targetologlar SET is_blocked = 0 WHERE id = ?", (targetolog_id,))
-    conn.commit()
-    conn.close()
+    return admin is not None
