@@ -66,11 +66,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     try:
-        # Agar foydalanuvchi ro‘yxatdan o‘tgan bo‘lsa
         if db.is_registered(user_id):
             if user_id in config.ADMIN_IDS:
                 await update.message.reply_text("Admin paneliga xush kelibsiz.")
-                # Bu yerda admin panel funksiyasini chaqirishingiz mumkin
                 return
             elif db.is_operator(user_id):
                 await update.message.reply_text("Operator paneliga xush kelibsiz. Panel yuklanmoqda...")
@@ -84,7 +82,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Siz ro‘yxatdan o‘tgansiz, ammo hali tasdiqlanmagansiz.")
                 return
 
-        # Aks holda — telefon raqamini so‘rash
+        # Telefon raqam so‘rash
         contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
         keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
 
@@ -95,7 +93,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         logging.error(f"Xatolik /start komandasi: {e}")
-        await update.message.reply_text("Botda xatolik yuz berdi.")
+        await update.message.reply_text("Xatolik yuz berdi. Iltimos, keyinroq urinib ko‘ring.")
         await show_operator_panel(update, context)
     elif db.is_targetolog(user_id):
         await show_targetolog_panel(update, context)
