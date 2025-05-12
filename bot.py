@@ -43,7 +43,17 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 # /start komandasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        user_id = update.effective_user.id
+        if not db.is_registered(user_id):
+            await update.message.reply_text("Ro‘yxatdan o‘tishingiz kerak.")
+            return
+        await update.message.reply_text("Xush kelibsiz! Panel yuklanmoqda...")
+        # bu yerda panelni ko‘rsatish uchun kod yozasiz (masalan, operator_panel.send_panel(update, context))
+    except Exception as e:
+        await update.message.reply_text("Botda hatolik yuz berdi.")
+        print(f"Xatolik /start komandasi: {e}")
     if db.is_registered(user_id):
         if user_id in config.ADMIN_IDS:
             await update.message.reply_text("Admin paneliga xush kelibsiz.")
