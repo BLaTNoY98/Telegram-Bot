@@ -65,18 +65,37 @@ async def show_targetolog_panel(update: Update, context: ContextTypes.DEFAULT_TY
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
-    if not db.is_registered(user_id):
-        contact_btn = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
-        markup = ReplyKeyboardMarkup([[contact_btn]], resize_keyboard=True, one_time_keyboard=True)
-        await update.message.reply_text(
-            "Iltimos, botdan foydalanish uchun telefon raqamingizni yuboring:",
-            reply_markup=markup
-        )
-        return
+    try:
+        # Agar foydalanuvchi ro‘yxatdan o‘tgan bo‘lsa
+        if db.is_registered(user_id):
+            if user_id in config.ADMIN_IDS:
+                await update.message.reply_text("Admin paneliga xush kelibsiz.")
+                # Bu yerda admin panel funksiyasini chaqirishingiz mumkin
+                return
+            elif db.is_operator(user_id):
+                await update.message.reply_text("Operator paneliga xush kelibsiz. Panel yuklanmoqda...")
+                await show_operator_panel(update, context)
+                return
+            elif db.is_targetolog(user_id):
+                await update.message.reply_text("Targetolog paneliga xush kelibsiz. Panel yuklanmoqda...")
+                await show_targetolog_panel(update, context)
+                return
+            else:
+                await update.message.reply_text("Siz ro‘yxatdan o‘tgansiz, ammo hali tasdiqlanmagansiz.")
+                return
 
-    if user_id in config.ADMIN_IDS:
-        await update.message.reply_text("Admin paneliga xush kelibsiz.")
-    elif db.is_operator(user_id):
+        # Aks holda — telefon raqamini so‘rash
+        contact_button = KeyboardButton("Telefon raqamni yuborish", request_contact=True)
+        keyboard = ReplyKeyboardMarkup([[contact_button]], resize_keyboard=True, one_time_keyboard=True)
+
+        await update.message.reply_text(
+            "Botdan foydalanish uchun iltimos, telefon raqamingizni yuboring:",
+            reply_markup=keyboard
+        )
+
+    except Exception as e:
+        logging.error(f"Xatolik /start komandasi: {e}")
+        await update.message.reply_text("Botda xatolik yuz berdi.")
         await show_operator_panel(update, context)
     elif db.is_targetolog(user_id):
         await show_targetolog_panel(update, context)
